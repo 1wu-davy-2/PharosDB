@@ -1,0 +1,316 @@
+{
+  "screenshot": {
+    "name": "projects/16918841996371976852/files/487b5bbf34d04599937c5d421b2aaee1",
+    "downloadUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvyPL3PZfKL46V8Bxeb2wJN9tzuIYl9HDg7vpz5_B9NNt65EcWgjSvPwYDeqxsM4d_EYEeT1pT6QEimLOu2E1rRmq9thLpS4Xzct8h1jmQDPlsaNa1bRyUcflEA3X3aHDs5X-SiX_MxXlFWqt9vzc1iuupT74JXkoEJ7kirPmrCmyN68qE1Vyk1mdwAfBHKyUYvX2GNjPrGRcZptLXl1VRtUuTzB9D37dirszNwOofltuTuni4hJ7aa7CH8"
+  },
+  "htmlCode": {
+    "name": "projects/16918841996371976852/files/f0ddb4d1f5bd42008ede993c1ccfd4ac",
+    "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2Q1ZDBiNjIxNTFlYjQ0MTBiMjk5MmVhNGMyNjViOGFmEgsSBxDTkvj89QkYAZIBJAoKcHJvamVjdF9pZBIWQhQxNjkxODg0MTk5NjM3MTk3Njg1Mg&filename=&opi=89354086",
+    "mimeType": "text/html"
+  },
+  "id": "156f385d05b24330a7e91d2892f65cc2",
+  "generatedBy": "figaro_agent",
+  "width": "2560",
+  "height": "2048",
+  "title": "PharosDB - Monitoring Dashboard",
+  "prompt": "2️ Main Dashboard Layout for PharosDB.\n- Full shell: Collapsible Sidebar (240px/64px) + Top Header (56px) + Scrollable Main Content.\n- Sidebar: Deep navy (#0f1a2e). Logo: Amber lighthouse beam icon + \"PharosDB\" text. Nav items: Overview (Active), SQL Analytics, Lock Topology, Instance Management, Diagnostic Reports, Settings. 3px amber left-border for active item.\n- Top Header: White, bottom-border. Includes Hamburger toggle, Page Title \"监控总览\", Notification bell (red dot), User avatar (Amber with \"JD\" initials) + \"John Doe\".\n- Main Content: Background #f1f5f9 (slate-50), 24px padding.\n- Row 1: 4 Stat Cards (Active Instances: 42, Slow Queries: 1,247, Avg Latency: 23ms, Alerts: 3). Cards have bold numbers and green/red trend arrows.\n- Row 2: 2-column grid. Left: \"数据库健康概览\" (large chart placeholder with grid pattern). Right: \"最近告警\" (List of 5 items with severity dots).\n- Row 3: Full-width \"Top 10 慢查询\" table. Columns: Rank, SQL Fingerprint, Avg Time, Exec Count, Trend.\n- All cards have hover lift effects. Sidebar transition is smooth (200ms). Mobile-responsive: sidebar becomes overlay.",
+  "name": "projects/16918841996371976852/screens/156f385d05b24330a7e91d2892f65cc2",
+  "theme": {
+    "colorMode": "LIGHT",
+    "font": "NOTO_SANS",
+    "roundness": "ROUND_EIGHT",
+    "customColor": "#f59e0b",
+    "headlineFont": "NOTO_SANS",
+    "bodyFont": "NOTO_SANS",
+    "labelFont": "JETBRAINS_MONO",
+    "namedColors": {
+      "on_tertiary_fixed": "#001c37",
+      "background": "#f7f9fb",
+      "on_secondary": "#ffffff",
+      "on_tertiary": "#ffffff",
+      "surface_dim": "#d8dadc",
+      "on_surface_variant": "#534434",
+      "tertiary_fixed": "#d2e4ff",
+      "on_error_container": "#93000a",
+      "primary": "#855300",
+      "surface_bright": "#f7f9fb",
+      "surface_tint": "#855300",
+      "on_secondary_fixed": "#021c39",
+      "on_primary_container": "#613b00",
+      "on_tertiary_container": "#274568",
+      "secondary_fixed_dim": "#b2c8ed",
+      "on_surface": "#191c1e",
+      "surface": "#f7f9fb",
+      "surface_container_lowest": "#ffffff",
+      "on_secondary_fixed_variant": "#324866",
+      "tertiary": "#436084",
+      "surface_container_high": "#e6e8ea",
+      "surface_container_highest": "#e0e3e5",
+      "inverse_surface": "#2d3133",
+      "surface_container": "#eceef0",
+      "on_error": "#ffffff",
+      "inverse_on_surface": "#eff1f3",
+      "surface_variant": "#e0e3e5",
+      "on_primary_fixed_variant": "#653e00",
+      "error_container": "#ffdad6",
+      "secondary_container": "#c2d8fe",
+      "primary_fixed_dim": "#ffb95f",
+      "surface_container_low": "#f2f4f6",
+      "tertiary_container": "#95b3db",
+      "secondary_fixed": "#d4e3ff",
+      "primary_container": "#f59e0b",
+      "tertiary_fixed_dim": "#abc9f2",
+      "on_tertiary_fixed_variant": "#2a486b",
+      "on_primary": "#ffffff",
+      "on_primary_fixed": "#2a1700",
+      "on_background": "#191c1e",
+      "inverse_primary": "#ffb95f",
+      "secondary": "#4a5f7f",
+      "on_secondary_container": "#495e7e",
+      "primary_fixed": "#ffddb8",
+      "outline": "#867461",
+      "outline_variant": "#d8c3ad",
+      "error": "#ba1a1a"
+    },
+    "designMd": "---\nname: Pharos Observation System\ncolors:\n  surface: '#f7f9fb'\n  surface-dim: '#d8dadc'\n  surface-bright: '#f7f9fb'\n  surface-container-lowest: '#ffffff'\n  surface-container-low: '#f2f4f6'\n  surface-container: '#eceef0'\n  surface-container-high: '#e6e8ea'\n  surface-container-highest: '#e0e3e5'\n  on-surface: '#191c1e'\n  on-surface-variant: '#534434'\n  inverse-surface: '#2d3133'\n  inverse-on-surface: '#eff1f3'\n  outline: '#867461'\n  outline-variant: '#d8c3ad'\n  surface-tint: '#855300'\n  primary: '#855300'\n  on-primary: '#ffffff'\n  primary-container: '#f59e0b'\n  on-primary-container: '#613b00'\n  inverse-primary: '#ffb95f'\n  secondary: '#4a5f7f'\n  on-secondary: '#ffffff'\n  secondary-container: '#c2d8fe'\n  on-secondary-container: '#495e7e'\n  tertiary: '#436084'\n  on-tertiary: '#ffffff'\n  tertiary-container: '#95b3db'\n  on-tertiary-container: '#274568'\n  error: '#ba1a1a'\n  on-error: '#ffffff'\n  error-container: '#ffdad6'\n  on-error-container: '#93000a'\n  primary-fixed: '#ffddb8'\n  primary-fixed-dim: '#ffb95f'\n  on-primary-fixed: '#2a1700'\n  on-primary-fixed-variant: '#653e00'\n  secondary-fixed: '#d4e3ff'\n  secondary-fixed-dim: '#b2c8ed'\n  on-secondary-fixed: '#021c39'\n  on-secondary-fixed-variant: '#324866'\n  tertiary-fixed: '#d2e4ff'\n  tertiary-fixed-dim: '#abc9f2'\n  on-tertiary-fixed: '#001c37'\n  on-tertiary-fixed-variant: '#2a486b'\n  background: '#f7f9fb'\n  on-background: '#191c1e'\n  surface-variant: '#e0e3e5'\ntypography:\n  display-lg:\n    fontFamily: notoSans\n    fontSize: 48px\n    fontWeight: '700'\n    lineHeight: 56px\n    letterSpacing: -0.02em\n  headline-lg:\n    fontFamily: notoSans\n    fontSize: 32px\n    fontWeight: '600'\n    lineHeight: 40px\n  headline-md:\n    fontFamily: notoSans\n    fontSize: 24px\n    fontWeight: '600'\n    lineHeight: 32px\n  headline-sm:\n    fontFamily: notoSans\n    fontSize: 20px\n    fontWeight: '600'\n    lineHeight: 28px\n  body-lg:\n    fontFamily: notoSans\n    fontSize: 18px\n    fontWeight: '400'\n    lineHeight: 28px\n  body-md:\n    fontFamily: notoSans\n    fontSize: 16px\n    fontWeight: '400'\n    lineHeight: 24px\n  body-sm:\n    fontFamily: notoSans\n    fontSize: 14px\n    fontWeight: '400'\n    lineHeight: 20px\n  code-md:\n    fontFamily: jetbrainsMono\n    fontSize: 14px\n    fontWeight: '400'\n    lineHeight: 20px\n  code-sm:\n    fontFamily: jetbrainsMono\n    fontSize: 12px\n    fontWeight: '400'\n    lineHeight: 18px\n  label-caps:\n    fontFamily: notoSans\n    fontSize: 12px\n    fontWeight: '700'\n    lineHeight: 16px\n    letterSpacing: 0.05em\nrounded:\n  sm: 0.25rem\n  DEFAULT: 0.5rem\n  md: 0.75rem\n  lg: 1rem\n  xl: 1.5rem\n  full: 9999px\nspacing:\n  unit: 4px\n  xs: 4px\n  sm: 8px\n  md: 16px\n  lg: 24px\n  xl: 32px\n  gutter: 20px\n  container-max: 1440px\n---\n\n## Brand & Style\n\nThe design system is built on the metaphor of a lighthouse: a singular, reliable source of light cutting through the complexity of massive data environments. It balances the \"darkness\" of deep infrastructure with the \"clarity\" of actionable insights.\n\nThe aesthetic follows a **Corporate / Modern** approach infused with **Micro-light** details. This involves high-precision UI elements, subtle luminous glows on active states to represent the beacon, and a focus on \"Data-Density without Clutter.\" The interface must feel like a high-end engineering instrument—reliable, precise, and illuminating. \n\nKey attributes:\n- **Luminous Hierarchy:** Use light not just for decoration, but to draw the eye toward critical system states.\n- **Precision Engineering:** Sharp execution of borders and alignment to mirror the exactness of database metrics.\n- **Calm Authority:** A professional atmosphere that remains readable during high-stress \"Critical\" incidents.\n\n## Colors\n\nThe palette bridges a high-contrast brand identity with a functional dashboard workspace. \n\n- **The Beacon (Primary):** Warm Amber (#f59e0b) is used sparingly for primary actions, critical highlights, and brand moments. It represents the lighthouse beam.\n- **The Ocean (Deep Neutrals):** The Deep Navy shades are reserved for sidebars, navigation headers, and \"dark-mode\" components to provide the nocturnal atmosphere of the brand.\n- **The Workspace (Light Neutrals):** To ensure maximum readability for long-term data analysis, the main content area uses a \"Cool White\" (#f8fafc) background with pure white cards. \n- **The Signal (Status):** Standardized semantic colors for health checks. Ensure the Amber warning is distinguishable from the Primary Gold through context (icons vs. buttons).\n\n## Typography\n\nThis design system utilizes a dual-font strategy to separate narrative/instruction from technical data.\n\n- **Main Interface:** Noto Sans is used for all UI labels, headings, and body copy. It provides a clean, neutral, and highly legible foundation.\n- **Technical Layer:** JetBrains Mono is strictly enforced for SQL queries, database schema names, IP addresses, and numerical metrics. This monospaced clarity is essential for distinguishing \"O\" from \"0\" in technical environments.\n- **Visual Scale:** On mobile devices, `display-lg` should downscale to 32px and `headline-lg` to 24px to maintain layout integrity.\n\n## Layout & Spacing\n\nThe system uses a **4px base grid** to allow for the high density required by observability tools.\n\n- **Grid Model:** A 12-column fluid grid for the main content area. Sidebars are fixed at 260px (collapsed to 64px). \n- **Density:** Dashboard widgets should utilize \"Compact\" spacing (12px internal padding) to maximize information on the fold. Standard pages use \"Comfortable\" spacing (24px).\n- **Breakpoints:**\n  - **Mobile (\u003c768px):** 4 columns, 16px margins, stack all widgets.\n  - **Tablet (768px - 1024px):** 8 columns, 20px margins.\n  - **Desktop (\u003e1024px):** 12 columns, 24px margins, max-width 1440px.\n\n## Elevation & Depth\n\nTo maintain the \"Lighthouse\" feel, elevation is achieved through **Tonal Layers** and **Subtle Glows** rather than heavy shadows.\n\n- **Level 0 (Background):** #f8fafc (The \"Sea\" - flat).\n- **Level 1 (Cards/Widgets):** Pure white surface with a 1px border (#e2e8f0). No shadow.\n- **Level 2 (Dropdowns/Modals):** Pure white surface with a soft, amber-tinted shadow (0px 4px 20px rgba(245, 158, 11, 0.08)) to suggest light casting from the element.\n- **Active State Glow:** Focused inputs or primary buttons feature a 2px outer glow using the primary color at 20% opacity. This mimics the \"halo\" effect of a lighthouse beam in fog.\n\n## Shapes\n\nThe shape language differentiates between \"structural\" containers and \"interactive\" elements:\n\n- **Structural (Cards/Modals):** Use `rounded-xl` (1.5rem / 24px) or `rounded-lg` (1rem / 16px) to soften the large data-heavy panels and make the platform feel modern and approachable.\n- **Interactive (Buttons/Inputs/Tabs):** Use `rounded-md` (0.5rem / 8px) for a more precise, tool-like feel. \n- **Indicators (Tags/Status):** Use pill-shaped (full radius) for status badges (Healthy, Critical) to make them instantly recognizable as distinct from clickable buttons.\n\n## Components\n\n- **Buttons:** Primary buttons use the Warm Amber gradient (Top to Bottom: #fbbf24 to #d97706). Text is white with a subtle text-shadow for legibility. Secondary buttons use a Deep Navy outline.\n- **Data Widgets:** Every card must have a header with a 12px JetBrains Mono label and a \"beacon\" indicator (a 6px dot) showing the real-time status of the data stream.\n- **Input Fields:** Use 8px rounded corners. On focus, the border changes to Primary Gold with the 20% opacity amber glow.\n- **SQL Editor:** Use a Deep Navy (#0a1628) background for code blocks to provide visual rest from the light dashboard. Use JetBrains Mono with custom syntax highlighting (Gold for keywords, Green for strings).\n- **Status Badges:** Subtle background tints (e.g., 10% opacity of the status color) with high-contrast text and a solid 6px status dot.\n- **Charts:** Use a 2px stroke width for line charts. Fill areas with a very light 5% opacity gradient of the line color to create volume without clutter.",
+    "colorVariant": "FIDELITY",
+    "overridePrimaryColor": "#f59e0b",
+    "overrideSecondaryColor": "#0f2744",
+    "overrideTertiaryColor": "#1a3a5c",
+    "overrideNeutralColor": "#f8fafc",
+    "spacingScale": 2,
+    "typography": {
+      "body-md": {
+        "fontFamily": "notoSans",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px"
+      },
+      "body-lg": {
+        "fontFamily": "notoSans",
+        "fontSize": "18px",
+        "fontWeight": "400",
+        "lineHeight": "28px"
+      },
+      "headline-sm": {
+        "fontFamily": "notoSans",
+        "fontSize": "20px",
+        "fontWeight": "600",
+        "lineHeight": "28px"
+      },
+      "headline-md": {
+        "fontFamily": "notoSans",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "32px"
+      },
+      "headline-lg": {
+        "fontFamily": "notoSans",
+        "fontSize": "32px",
+        "fontWeight": "600",
+        "lineHeight": "40px"
+      },
+      "body-sm": {
+        "fontFamily": "notoSans",
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "20px"
+      },
+      "label-caps": {
+        "fontFamily": "notoSans",
+        "fontSize": "12px",
+        "fontWeight": "700",
+        "lineHeight": "16px",
+        "letterSpacing": "0.05em"
+      },
+      "display-lg": {
+        "fontFamily": "notoSans",
+        "fontSize": "48px",
+        "fontWeight": "700",
+        "lineHeight": "56px",
+        "letterSpacing": "-0.02em"
+      },
+      "code-sm": {
+        "fontFamily": "jetbrainsMono",
+        "fontSize": "12px",
+        "fontWeight": "400",
+        "lineHeight": "18px"
+      },
+      "code-md": {
+        "fontFamily": "jetbrainsMono",
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "20px"
+      }
+    },
+    "spacing": {
+      "lg": "24px",
+      "xs": "4px",
+      "gutter": "20px",
+      "unit": "4px",
+      "xl": "32px",
+      "sm": "8px",
+      "md": "16px",
+      "container-max": "1440px"
+    },
+    "headlineFontFamily": "Noto Sans",
+    "bodyFontFamily": "Noto Sans",
+    "labelFontFamily": "Jetbrains Mono"
+  },
+  "deviceType": "DESKTOP",
+  "screenType": "DESIGN",
+  "screenMetadata": {
+    "agentType": "PRO_AGENT",
+    "status": "COMPLETE"
+  },
+  "designSystem": {
+    "name": "assets/fe1356b967f7471989ad9718beb2ad45",
+    "designSystem": {
+      "displayName": "Pharos Observation System",
+      "styleGuidelines": "## Brand & Style\n\nThe design system is built on the metaphor of a lighthouse: a singular, reliable source of light cutting through the complexity of massive data environments. It balances the \"darkness\" of deep infrastructure with the \"clarity\" of actionable insights.\n\nThe aesthetic follows a **Corporate / Modern** approach infused with **Micro-light** details. This involves high-precision UI elements, subtle luminous glows on active states to represent the beacon, and a focus on \"Data-Density without Clutter.\" The interface must feel like a high-end engineering instrument—reliable, precise, and illuminating. \n\nKey attributes:\n- **Luminous Hierarchy:** Use light not just for decoration, but to draw the eye toward critical system states.\n- **Precision Engineering:** Sharp execution of borders and alignment to mirror the exactness of database metrics.\n- **Calm Authority:** A professional atmosphere that remains readable during high-stress \"Critical\" incidents.\n\n## Layout & Spacing\n\nThe system uses a **4px base grid** to allow for the high density required by observability tools.\n\n- **Grid Model:** A 12-column fluid grid for the main content area. Sidebars are fixed at 260px (collapsed to 64px). \n- **Density:** Dashboard widgets should utilize \"Compact\" spacing (12px internal padding) to maximize information on the fold. Standard pages use \"Comfortable\" spacing (24px).\n- **Breakpoints:**\n  - **Mobile (\u003c768px):** 4 columns, 16px margins, stack all widgets.\n  - **Tablet (768px - 1024px):** 8 columns, 20px margins.\n  - **Desktop (\u003e1024px):** 12 columns, 24px margins, max-width 1440px.\n\n## Elevation & Depth\n\nTo maintain the \"Lighthouse\" feel, elevation is achieved through **Tonal Layers** and **Subtle Glows** rather than heavy shadows.\n\n- **Level 0 (Background):** #f8fafc (The \"Sea\" - flat).\n- **Level 1 (Cards/Widgets):** Pure white surface with a 1px border (#e2e8f0). No shadow.\n- **Level 2 (Dropdowns/Modals):** Pure white surface with a soft, amber-tinted shadow (0px 4px 20px rgba(245, 158, 11, 0.08)) to suggest light casting from the element.\n- **Active State Glow:** Focused inputs or primary buttons feature a 2px outer glow using the primary color at 20% opacity. This mimics the \"halo\" effect of a lighthouse beam in fog.\n\n## Components\n\n- **Buttons:** Primary buttons use the Warm Amber gradient (Top to Bottom: #fbbf24 to #d97706). Text is white with a subtle text-shadow for legibility. Secondary buttons use a Deep Navy outline.\n- **Data Widgets:** Every card must have a header with a 12px JetBrains Mono label and a \"beacon\" indicator (a 6px dot) showing the real-time status of the data stream.\n- **Input Fields:** Use 8px rounded corners. On focus, the border changes to Primary Gold with the 20% opacity amber glow.\n- **SQL Editor:** Use a Deep Navy (#0a1628) background for code blocks to provide visual rest from the light dashboard. Use JetBrains Mono with custom syntax highlighting (Gold for keywords, Green for strings).\n- **Status Badges:** Subtle background tints (e.g., 10% opacity of the status color) with high-contrast text and a solid 6px status dot.\n- **Charts:** Use a 2px stroke width for line charts. Fill areas with a very light 5% opacity gradient of the line color to create volume without clutter.",
+      "theme": {
+        "colorMode": "LIGHT",
+        "font": "NOTO_SANS",
+        "roundness": "ROUND_EIGHT",
+        "customColor": "#f59e0b",
+        "headlineFont": "NOTO_SANS",
+        "bodyFont": "NOTO_SANS",
+        "labelFont": "JETBRAINS_MONO",
+        "namedColors": {
+          "surface_container": "#eceef0",
+          "on_error": "#ffffff",
+          "error_container": "#ffdad6",
+          "surface_variant": "#e0e3e5",
+          "inverse_on_surface": "#eff1f3",
+          "on_primary_fixed_variant": "#653e00",
+          "primary_fixed_dim": "#ffb95f",
+          "secondary_container": "#c2d8fe",
+          "tertiary_fixed_dim": "#abc9f2",
+          "on_tertiary_fixed_variant": "#2a486b",
+          "surface_container_low": "#f2f4f6",
+          "tertiary_container": "#95b3db",
+          "secondary_fixed": "#d4e3ff",
+          "primary_container": "#f59e0b",
+          "on_primary": "#ffffff",
+          "secondary": "#4a5f7f",
+          "on_primary_fixed": "#2a1700",
+          "on_background": "#191c1e",
+          "inverse_primary": "#ffb95f",
+          "on_secondary_container": "#495e7e",
+          "outline": "#867461",
+          "error": "#ba1a1a",
+          "outline_variant": "#d8c3ad",
+          "primary_fixed": "#ffddb8",
+          "surface_dim": "#d8dadc",
+          "on_surface_variant": "#534434",
+          "tertiary_fixed": "#d2e4ff",
+          "on_tertiary_fixed": "#001c37",
+          "background": "#f7f9fb",
+          "on_secondary": "#ffffff",
+          "on_tertiary": "#ffffff",
+          "primary": "#855300",
+          "surface_bright": "#f7f9fb",
+          "surface_tint": "#855300",
+          "on_error_container": "#93000a",
+          "on_secondary_fixed": "#021c39",
+          "on_primary_container": "#613b00",
+          "on_tertiary_container": "#274568",
+          "on_surface": "#191c1e",
+          "surface": "#f7f9fb",
+          "surface_container_lowest": "#ffffff",
+          "secondary_fixed_dim": "#b2c8ed",
+          "on_secondary_fixed_variant": "#324866",
+          "tertiary": "#436084",
+          "inverse_surface": "#2d3133",
+          "surface_container_high": "#e6e8ea",
+          "surface_container_highest": "#e0e3e5"
+        },
+        "designMd": "---\nname: Pharos Observation System\ncolors:\n  surface: '#f7f9fb'\n  surface-dim: '#d8dadc'\n  surface-bright: '#f7f9fb'\n  surface-container-lowest: '#ffffff'\n  surface-container-low: '#f2f4f6'\n  surface-container: '#eceef0'\n  surface-container-high: '#e6e8ea'\n  surface-container-highest: '#e0e3e5'\n  on-surface: '#191c1e'\n  on-surface-variant: '#534434'\n  inverse-surface: '#2d3133'\n  inverse-on-surface: '#eff1f3'\n  outline: '#867461'\n  outline-variant: '#d8c3ad'\n  surface-tint: '#855300'\n  primary: '#855300'\n  on-primary: '#ffffff'\n  primary-container: '#f59e0b'\n  on-primary-container: '#613b00'\n  inverse-primary: '#ffb95f'\n  secondary: '#4a5f7f'\n  on-secondary: '#ffffff'\n  secondary-container: '#c2d8fe'\n  on-secondary-container: '#495e7e'\n  tertiary: '#436084'\n  on-tertiary: '#ffffff'\n  tertiary-container: '#95b3db'\n  on-tertiary-container: '#274568'\n  error: '#ba1a1a'\n  on-error: '#ffffff'\n  error-container: '#ffdad6'\n  on-error-container: '#93000a'\n  primary-fixed: '#ffddb8'\n  primary-fixed-dim: '#ffb95f'\n  on-primary-fixed: '#2a1700'\n  on-primary-fixed-variant: '#653e00'\n  secondary-fixed: '#d4e3ff'\n  secondary-fixed-dim: '#b2c8ed'\n  on-secondary-fixed: '#021c39'\n  on-secondary-fixed-variant: '#324866'\n  tertiary-fixed: '#d2e4ff'\n  tertiary-fixed-dim: '#abc9f2'\n  on-tertiary-fixed: '#001c37'\n  on-tertiary-fixed-variant: '#2a486b'\n  background: '#f7f9fb'\n  on-background: '#191c1e'\n  surface-variant: '#e0e3e5'\ntypography:\n  display-lg:\n    fontFamily: notoSans\n    fontSize: 48px\n    fontWeight: '700'\n    lineHeight: 56px\n    letterSpacing: -0.02em\n  headline-lg:\n    fontFamily: notoSans\n    fontSize: 32px\n    fontWeight: '600'\n    lineHeight: 40px\n  headline-md:\n    fontFamily: notoSans\n    fontSize: 24px\n    fontWeight: '600'\n    lineHeight: 32px\n  headline-sm:\n    fontFamily: notoSans\n    fontSize: 20px\n    fontWeight: '600'\n    lineHeight: 28px\n  body-lg:\n    fontFamily: notoSans\n    fontSize: 18px\n    fontWeight: '400'\n    lineHeight: 28px\n  body-md:\n    fontFamily: notoSans\n    fontSize: 16px\n    fontWeight: '400'\n    lineHeight: 24px\n  body-sm:\n    fontFamily: notoSans\n    fontSize: 14px\n    fontWeight: '400'\n    lineHeight: 20px\n  code-md:\n    fontFamily: jetbrainsMono\n    fontSize: 14px\n    fontWeight: '400'\n    lineHeight: 20px\n  code-sm:\n    fontFamily: jetbrainsMono\n    fontSize: 12px\n    fontWeight: '400'\n    lineHeight: 18px\n  label-caps:\n    fontFamily: notoSans\n    fontSize: 12px\n    fontWeight: '700'\n    lineHeight: 16px\n    letterSpacing: 0.05em\nrounded:\n  sm: 0.25rem\n  DEFAULT: 0.5rem\n  md: 0.75rem\n  lg: 1rem\n  xl: 1.5rem\n  full: 9999px\nspacing:\n  unit: 4px\n  xs: 4px\n  sm: 8px\n  md: 16px\n  lg: 24px\n  xl: 32px\n  gutter: 20px\n  container-max: 1440px\n---\n\n## Brand & Style\n\nThe design system is built on the metaphor of a lighthouse: a singular, reliable source of light cutting through the complexity of massive data environments. It balances the \"darkness\" of deep infrastructure with the \"clarity\" of actionable insights.\n\nThe aesthetic follows a **Corporate / Modern** approach infused with **Micro-light** details. This involves high-precision UI elements, subtle luminous glows on active states to represent the beacon, and a focus on \"Data-Density without Clutter.\" The interface must feel like a high-end engineering instrument—reliable, precise, and illuminating. \n\nKey attributes:\n- **Luminous Hierarchy:** Use light not just for decoration, but to draw the eye toward critical system states.\n- **Precision Engineering:** Sharp execution of borders and alignment to mirror the exactness of database metrics.\n- **Calm Authority:** A professional atmosphere that remains readable during high-stress \"Critical\" incidents.\n\n## Colors\n\nThe palette bridges a high-contrast brand identity with a functional dashboard workspace. \n\n- **The Beacon (Primary):** Warm Amber (#f59e0b) is used sparingly for primary actions, critical highlights, and brand moments. It represents the lighthouse beam.\n- **The Ocean (Deep Neutrals):** The Deep Navy shades are reserved for sidebars, navigation headers, and \"dark-mode\" components to provide the nocturnal atmosphere of the brand.\n- **The Workspace (Light Neutrals):** To ensure maximum readability for long-term data analysis, the main content area uses a \"Cool White\" (#f8fafc) background with pure white cards. \n- **The Signal (Status):** Standardized semantic colors for health checks. Ensure the Amber warning is distinguishable from the Primary Gold through context (icons vs. buttons).\n\n## Typography\n\nThis design system utilizes a dual-font strategy to separate narrative/instruction from technical data.\n\n- **Main Interface:** Noto Sans is used for all UI labels, headings, and body copy. It provides a clean, neutral, and highly legible foundation.\n- **Technical Layer:** JetBrains Mono is strictly enforced for SQL queries, database schema names, IP addresses, and numerical metrics. This monospaced clarity is essential for distinguishing \"O\" from \"0\" in technical environments.\n- **Visual Scale:** On mobile devices, `display-lg` should downscale to 32px and `headline-lg` to 24px to maintain layout integrity.\n\n## Layout & Spacing\n\nThe system uses a **4px base grid** to allow for the high density required by observability tools.\n\n- **Grid Model:** A 12-column fluid grid for the main content area. Sidebars are fixed at 260px (collapsed to 64px). \n- **Density:** Dashboard widgets should utilize \"Compact\" spacing (12px internal padding) to maximize information on the fold. Standard pages use \"Comfortable\" spacing (24px).\n- **Breakpoints:**\n  - **Mobile (\u003c768px):** 4 columns, 16px margins, stack all widgets.\n  - **Tablet (768px - 1024px):** 8 columns, 20px margins.\n  - **Desktop (\u003e1024px):** 12 columns, 24px margins, max-width 1440px.\n\n## Elevation & Depth\n\nTo maintain the \"Lighthouse\" feel, elevation is achieved through **Tonal Layers** and **Subtle Glows** rather than heavy shadows.\n\n- **Level 0 (Background):** #f8fafc (The \"Sea\" - flat).\n- **Level 1 (Cards/Widgets):** Pure white surface with a 1px border (#e2e8f0). No shadow.\n- **Level 2 (Dropdowns/Modals):** Pure white surface with a soft, amber-tinted shadow (0px 4px 20px rgba(245, 158, 11, 0.08)) to suggest light casting from the element.\n- **Active State Glow:** Focused inputs or primary buttons feature a 2px outer glow using the primary color at 20% opacity. This mimics the \"halo\" effect of a lighthouse beam in fog.\n\n## Shapes\n\nThe shape language differentiates between \"structural\" containers and \"interactive\" elements:\n\n- **Structural (Cards/Modals):** Use `rounded-xl` (1.5rem / 24px) or `rounded-lg` (1rem / 16px) to soften the large data-heavy panels and make the platform feel modern and approachable.\n- **Interactive (Buttons/Inputs/Tabs):** Use `rounded-md` (0.5rem / 8px) for a more precise, tool-like feel. \n- **Indicators (Tags/Status):** Use pill-shaped (full radius) for status badges (Healthy, Critical) to make them instantly recognizable as distinct from clickable buttons.\n\n## Components\n\n- **Buttons:** Primary buttons use the Warm Amber gradient (Top to Bottom: #fbbf24 to #d97706). Text is white with a subtle text-shadow for legibility. Secondary buttons use a Deep Navy outline.\n- **Data Widgets:** Every card must have a header with a 12px JetBrains Mono label and a \"beacon\" indicator (a 6px dot) showing the real-time status of the data stream.\n- **Input Fields:** Use 8px rounded corners. On focus, the border changes to Primary Gold with the 20% opacity amber glow.\n- **SQL Editor:** Use a Deep Navy (#0a1628) background for code blocks to provide visual rest from the light dashboard. Use JetBrains Mono with custom syntax highlighting (Gold for keywords, Green for strings).\n- **Status Badges:** Subtle background tints (e.g., 10% opacity of the status color) with high-contrast text and a solid 6px status dot.\n- **Charts:** Use a 2px stroke width for line charts. Fill areas with a very light 5% opacity gradient of the line color to create volume without clutter.",
+        "colorVariant": "FIDELITY",
+        "overridePrimaryColor": "#f59e0b",
+        "overrideSecondaryColor": "#0f2744",
+        "overrideTertiaryColor": "#1a3a5c",
+        "overrideNeutralColor": "#f8fafc",
+        "spacingScale": 2,
+        "typography": {
+          "code-md": {
+            "fontFamily": "jetbrainsMono",
+            "fontSize": "14px",
+            "fontWeight": "400",
+            "lineHeight": "20px"
+          },
+          "code-sm": {
+            "fontFamily": "jetbrainsMono",
+            "fontSize": "12px",
+            "fontWeight": "400",
+            "lineHeight": "18px"
+          },
+          "label-caps": {
+            "fontFamily": "notoSans",
+            "fontSize": "12px",
+            "fontWeight": "700",
+            "lineHeight": "16px",
+            "letterSpacing": "0.05em"
+          },
+          "display-lg": {
+            "fontFamily": "notoSans",
+            "fontSize": "48px",
+            "fontWeight": "700",
+            "lineHeight": "56px",
+            "letterSpacing": "-0.02em"
+          },
+          "headline-lg": {
+            "fontFamily": "notoSans",
+            "fontSize": "32px",
+            "fontWeight": "600",
+            "lineHeight": "40px"
+          },
+          "body-sm": {
+            "fontFamily": "notoSans",
+            "fontSize": "14px",
+            "fontWeight": "400",
+            "lineHeight": "20px"
+          },
+          "headline-sm": {
+            "fontFamily": "notoSans",
+            "fontSize": "20px",
+            "fontWeight": "600",
+            "lineHeight": "28px"
+          },
+          "headline-md": {
+            "fontFamily": "notoSans",
+            "fontSize": "24px",
+            "fontWeight": "600",
+            "lineHeight": "32px"
+          },
+          "body-md": {
+            "fontFamily": "notoSans",
+            "fontSize": "16px",
+            "fontWeight": "400",
+            "lineHeight": "24px"
+          },
+          "body-lg": {
+            "fontFamily": "notoSans",
+            "fontSize": "18px",
+            "fontWeight": "400",
+            "lineHeight": "28px"
+          }
+        },
+        "spacing": {
+          "md": "16px",
+          "container-max": "1440px",
+          "sm": "8px",
+          "unit": "4px",
+          "xl": "32px",
+          "lg": "24px",
+          "gutter": "20px",
+          "xs": "4px"
+        },
+        "headlineFontFamily": "Noto Sans",
+        "bodyFontFamily": "Noto Sans",
+        "labelFontFamily": "Jetbrains Mono"
+      }
+    },
+    "version": "1"
+  }
+}

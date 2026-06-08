@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PharosDB - Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "error-container": "#ffdad6",
+                      "background": "#0B1A2E",
+                      "on-primary": "#ffffff",
+                      "secondary-fixed-dim": "#b2c8ed",
+                      "on-secondary": "#ffffff",
+                      "on-primary-container": "#613b00",
+                      "surface-container": "#eceef0",
+                      "surface-tint": "#855300",
+                      "surface-variant": "#e0e3e5",
+                      "on-secondary-fixed": "#021c39",
+                      "surface": "#0B1A2E",
+                      "inverse-surface": "#2d3133",
+                      "tertiary-fixed": "#d2e4ff",
+                      "error": "#ba1a1a",
+                      "secondary-fixed": "#d4e3ff",
+                      "on-error-container": "#93000a",
+                      "primary-fixed": "#ffddb8",
+                      "on-error": "#ffffff",
+                      "surface-container-highest": "#e0e3e5",
+                      "primary": "#855300",
+                      "inverse-primary": "#ffb95f",
+                      "on-primary-fixed-variant": "#653e00",
+                      "primary-fixed-dim": "#ffb95f",
+                      "tertiary": "#436084",
+                      "surface-container-high": "#e6e8ea",
+                      "surface-dim": "#d8dadc",
+                      "on-primary-fixed": "#2a1700",
+                      "outline": "#867461",
+                      "surface-container-low": "#f2f4f6",
+                      "secondary-container": "#c2d8fe",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-container": "#274568",
+                      "secondary": "#4a5f7f",
+                      "on-background": "#ffffff",
+                      "on-surface-variant": "#9ca3af",
+                      "outline-variant": "#4b5563",
+                      "inverse-on-surface": "#eff1f3",
+                      "on-secondary-fixed-variant": "#324866",
+                      "on-tertiary-fixed-variant": "#2a486b",
+                      "on-surface": "#ffffff",
+                      "on-secondary-container": "#495e7e",
+                      "on-tertiary": "#ffffff",
+                      "tertiary-fixed-dim": "#abc9f2",
+                      "primary-container": "#f59e0b",
+                      "on-tertiary-fixed": "#001c37",
+                      "tertiary-container": "#95b3db",
+                      "surface-bright": "#f7f9fb"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "16px",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "md": "16px",
+                      "gutter": "20px",
+                      "unit": "4px",
+                      "container-max": "1440px",
+                      "sm": "8px",
+                      "xs": "4px",
+                      "lg": "24px",
+                      "xl": "32px"
+              },
+              "fontFamily": {
+                      "code-md": [
+                              "jetbrainsMono"
+                      ],
+                      "body-md": [
+                              "notoSans"
+                      ],
+                      "label-caps": [
+                              "notoSans"
+                      ],
+                      "headline-md": [
+                              "notoSans"
+                      ],
+                      "display-lg": [
+                              "notoSans"
+                      ],
+                      "body-lg": [
+                              "notoSans"
+                      ],
+                      "headline-sm": [
+                              "notoSans"
+                      ],
+                      "body-sm": [
+                              "notoSans"
+                      ],
+                      "code-sm": [
+                              "jetbrainsMono"
+                      ],
+                      "headline-lg": [
+                              "notoSans"
+                      ]
+              },
+              "fontSize": {
+                      "code-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "code-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: #0B1A2E;
+        }
+
+        #lighthouse-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+            margin-top: 4rem;
+        }
+
+        #lantern {
+            width: 20px;
+            height: 20px;
+            background-color: #fbbf24;
+            border-radius: 50%;
+            position: absolute;
+            top: 25px;
+            z-index: 20;
+            box-shadow: 0 0 15px #f59e0b;
+        }
+
+        #beam {
+            position: absolute;
+            top: 35px; /* Adjust based on lantern center */
+            width: 0;
+            height: 0;
+            border-left: 200px solid transparent;
+            border-right: 200px solid transparent;
+            border-bottom: 800px solid rgba(251, 191, 36, 0.35);
+            transform-origin: top center;
+            z-index: 10;
+            pointer-events: none;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+        }
+
+        .rotate-beam {
+            animation: rotate360 4s linear infinite;
+        }
+
+        @keyframes rotate360 {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-dark {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .amber-glow-focus:focus-within {
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.5);
+            border-color: #f59e0b;
+            background: rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-body-md text-on-surface relative overflow-hidden">
+<!-- Lighthouse & Branding -->
+<div id="lighthouse-container">
+<!-- SVG Lighthouse -->
+<svg class="relative z-20" fill="none" height="180" viewbox="0 0 120 180" width="120" xmlns="http://www.w3.org/2000/svg">
+<!-- Base -->
+<path d="M20 180L40 60H80L100 180H20Z" fill="#1e3a8a" stroke="#0d9488" stroke-width="2"></path>
+<!-- Stripes -->
+<path d="M28 140L36 100H84L92 140H28Z" fill="#0f172a" stroke="#0d9488" stroke-width="2"></path>
+<!-- Top platform -->
+<rect fill="#0f172a" height="10" stroke="#0d9488" stroke-width="2" width="60" x="30" y="50"></rect>
+<!-- Lantern room -->
+<rect fill="transparent" height="30" stroke="#0d9488" stroke-width="2" width="30" x="45" y="20"></rect>
+<!-- Roof -->
+<path d="M40 20L60 0L80 20H40Z" fill="#1e3a8a" stroke="#0d9488" stroke-width="2"></path>
+</svg>
+<div id="lantern"></div>
+<div class="rotate-beam" id="beam"></div>
+<div class="text-center mt-4 z-20">
+<h1 class="font-display-lg text-4xl text-white font-bold mb-1 tracking-tight">PharosDB</h1>
+<p class="font-body-sm text-sm text-gray-400">数据库可观测性平台</p>
+</div>
+</div>
+<!-- Login Form Container -->
+<div class="flex-1 flex items-start justify-center px-4 relative z-20 pb-12">
+<div class="w-full max-w-[400px] glass-card rounded-xl p-8 relative">
+<div class="mb-8 text-center">
+<h2 class="font-headline-lg text-headline-lg text-white mb-2">欢迎回来</h2>
+<p class="font-body-sm text-body-sm text-gray-300">登录您的账号继续使用</p>
+</div>
+<form class="space-y-6" id="loginForm">
+<!-- Username Input -->
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-gray-300 block uppercase" for="username">用户名 / USERNAME</label>
+<div class="relative flex items-center input-dark rounded-lg h-12 amber-glow-focus transition-all duration-200 overflow-hidden" id="username-container">
+<span class="material-symbols-outlined absolute left-3 text-gray-400 z-10 pointer-events-none">person</span>
+<input class="w-full h-full pl-10 pr-4 bg-transparent border-none focus:ring-0 font-body-md text-white placeholder-gray-500 outline-none" id="username" name="username" placeholder="Enter your username" required="" type="text"/>
+</div>
+</div>
+<!-- Password Input -->
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-gray-300 block uppercase" for="password">密码 / PASSWORD</label>
+<div class="relative flex items-center input-dark rounded-lg h-12 amber-glow-focus transition-all duration-200 overflow-hidden" id="password-container">
+<span class="material-symbols-outlined absolute left-3 text-gray-400 z-10 pointer-events-none">lock</span>
+<input class="w-full h-full pl-10 pr-10 bg-transparent border-none focus:ring-0 font-body-md text-white placeholder-gray-500 outline-none" id="password" name="password" placeholder="Enter your password" required="" type="password"/>
+<button class="absolute right-3 text-gray-400 hover:text-white transition-colors focus:outline-none flex items-center justify-center" id="togglePassword" type="button">
+<span class="material-symbols-outlined" id="visibilityIcon">visibility</span>
+</button>
+</div>
+</div>
+<!-- Remember Me & Forgot Password -->
+<div class="flex items-center justify-between">
+<div class="flex items-center">
+<input class="h-4 w-4 text-primary-container bg-transparent border-gray-500 focus:ring-primary-container rounded transition-colors cursor-pointer" id="remember" type="checkbox"/>
+<label class="ml-2 block font-body-sm text-body-sm text-gray-300 cursor-pointer" for="remember">
+                            记住我
+                        </label>
+</div>
+<a class="font-body-sm text-body-sm text-primary-container hover:text-white transition-colors font-semibold" href="#">忘记密码?</a>
+</div>
+<!-- Submit Button -->
+<button class="w-full h-12 bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white font-headline-sm text-headline-sm rounded-lg flex items-center justify-center shadow-lg hover:shadow-xl transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-primary-container focus:ring-offset-2 focus:ring-offset-[#0B1A2E]" id="submitBtn" type="submit">
+<span id="btnText">登 录</span>
+<span class="hidden material-symbols-outlined animate-spin ml-2" id="loadingSpinner">progress_activity</span>
+</button>
+</form>
+</div>
+</div>
+<!-- Footer -->
+<div class="text-center pb-6 relative z-20">
+<p class="font-code-sm text-code-sm text-gray-500">© 2026 PharosDB · v0.1.0</p>
+</div>
+<script>
+        // Password Visibility Toggle
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const visibilityIcon = document.getElementById('visibilityIcon');
+
+        togglePassword.addEventListener('click', function (e) {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            visibilityIcon.textContent = type === 'password' ? 'visibility' : 'visibility_off';
+        });
+
+        // Beam Interaction Logic
+        const beam = document.getElementById('beam');
+        const lantern = document.getElementById('lantern');
+        const usernameInput = document.getElementById('username');
+        const passwordInputEl = document.getElementById('password');
+
+        function calculateAngle(targetElement) {
+            const lanternRect = lantern.getBoundingClientRect();
+            const targetRect = targetElement.getBoundingClientRect();
+
+            const lanternX = lanternRect.left + lanternRect.width / 2;
+            const lanternY = lanternRect.top + lanternRect.height / 2;
+
+            const targetX = targetRect.left + targetRect.width / 2;
+            const targetY = targetRect.top + targetRect.height / 2;
+
+            const deltaX = targetX - lanternX;
+            const deltaY = targetY - lanternY;
+
+            // Math.atan2 returns angle from x-axis. We need angle from y-axis (downwards).
+            // Add 90 degrees (Math.PI/2) and convert to degrees.
+            let angleDeg = Math.atan2(deltaY, deltaX) * (180 / Math.PI) - 90;
+            
+            // Normalize to positive
+            if (angleDeg < 0) angleDeg += 360;
+
+            return angleDeg;
+        }
+
+        function snapBeamTo(target) {
+            beam.classList.remove('rotate-beam');
+            const angle = calculateAngle(target);
+            beam.style.transform = `rotate(${angle}deg)`;
+        }
+
+        function releaseBeam() {
+            beam.style.transform = '';
+            beam.classList.add('rotate-beam');
+        }
+
+        usernameInput.addEventListener('focus', () => snapBeamTo(usernameInput));
+        usernameInput.addEventListener('blur', releaseBeam);
+
+        passwordInputEl.addEventListener('focus', () => snapBeamTo(passwordInputEl));
+        passwordInputEl.addEventListener('blur', releaseBeam);
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            if (document.activeElement === usernameInput) {
+                snapBeamTo(usernameInput);
+            } else if (document.activeElement === passwordInputEl) {
+                snapBeamTo(passwordInputEl);
+            }
+        });
+
+        // Simulate Loading State on Form Submit
+        const loginForm = document.getElementById('loginForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Set loading state
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-80', 'cursor-not-allowed');
+            btnText.textContent = '登录中…';
+            loadingSpinner.classList.remove('hidden');
+
+            // Simulate API call
+            setTimeout(() => {
+                // Reset state (in a real app, this would redirect)
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-80', 'cursor-not-allowed');
+                btnText.textContent = '登 录';
+                loadingSpinner.classList.add('hidden');
+                
+                // Visual feedback for successful "login" demo
+                passwordInputEl.value = '';
+            }, 2000);
+        });
+    </script>
+</body></html>
