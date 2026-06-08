@@ -10,6 +10,7 @@ node_modules/
 
 # PMM upstream source (reference only, not part of the project)
 pmm-source/
+pmm/
 
 # IDE
 .idea/
