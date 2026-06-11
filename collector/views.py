@@ -2,6 +2,7 @@ from rest_framework import serializers as drf_serializers
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .crypto import decrypt
 from .models import CollectionHistory, DatabaseInstance
@@ -123,3 +124,12 @@ class DatabaseInstanceViewSet(viewsets.ModelViewSet):
             "success": False,
             "message": "MongoDB 采集器尚未实现 (P5 阶段)",
         }, status=status.HTTP_501_NOT_IMPLEMENTED)
+
+
+class SchedulerStatusView(APIView):
+    """GET /api/collector/scheduler/status/  查看调度器运行状态。"""
+
+    def get(self, request):
+        from .scheduler import registry
+        return Response({"schedulers": registry.status()})
+

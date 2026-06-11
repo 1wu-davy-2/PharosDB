@@ -8,18 +8,18 @@
 
 /* 历史展开行 */
 .history-row td {
-  background: #f8f9fa;
+  background: var(--color-bg-subtle);
   border-top: none;
 }
 
 .history-panel {
   padding: 12px 20px 16px;
-  border-top: 2px solid #855300;
+  border-top: 2px solid var(--color-accent);
 }
 
 .history-empty {
   font-size: 13px;
-  color: #534434;
+  color: var(--color-text-muted);
   padding: 16px 20px;
 }
 
@@ -33,17 +33,17 @@
   text-align: left;
   font-size: 11px;
   font-weight: 600;
-  color: #534434;
+  color: var(--color-text-muted);
   letter-spacing: 0.03em;
   text-transform: uppercase;
   padding: 4px 8px 6px;
-  border-bottom: 1px solid #e0e3e5;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .history-table td {
   padding: 5px 8px;
-  border-bottom: 1px solid #f0f0f0;
-  color: #191c1e;
+  border-bottom: 1px solid var(--color-border-subtle);
+  color: var(--color-text);
   vertical-align: middle;
 }
 
@@ -52,12 +52,42 @@
 }
 
 .history-table tr:hover td {
-  background: #fff;
+  background: var(--color-surface-hover);
 }
 
 /* 历史按钮激活态 */
 .btn-active {
-  background: #f8f0e3 !important;
-  color: #855300 !important;
-  border-color: #855300 !important;
+  background: var(--color-accent-light) !important;
+  color: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
 }
+
+/* 调度器状态指示点 */
+.sched-status-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sched-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sched-dot--running {
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+  animation: sched-pulse 2s infinite;
+}
+
+.sched-dot--idle {
+  background: #94a3b8;
+}
+
+@keyframes sched-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25); }
+  50%       { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1); }
+}
+

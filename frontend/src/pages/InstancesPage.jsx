@@ -1,19 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
 import "./InstancesPage.css";
-
-const DB_TYPES = [
-  { value: "mysql", label: "MySQL" },
-  { value: "postgresql", label: "PostgreSQL" },
-  { value: "mongodb", label: "MongoDB" },
-];
-
-const ENV_OPTIONS = [
-  { value: "prod", label: "生产" },
-  { value: "staging", label: "预发" },
-  { value: "dev", label: "开发" },
-];
 
 function fmtDatetime(val) {
   if (!val) return "—";
@@ -24,6 +13,7 @@ function fmtDatetime(val) {
 }
 
 export default function InstancesPage() {
+  const { t } = useTranslation();
   const [instances, setInstances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -32,12 +22,41 @@ export default function InstancesPage() {
   const [expandedHistory, setExpandedHistory] = useState(null);
   const [historyData, setHistoryData] = useState({});
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [schedulerStatus, setSchedulerStatus] = useState({});
+
+  const loadSchedulerStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get("/collector/scheduler/status/");
+      const map = {};
+      (data.schedulers || []).forEach((s) => { map[s.instance_id] = s; });
+      setSchedulerStatus(map);
+    } catch {}
+  }, []);
+
+  // 每 30s 刷新调度器状态
+  useEffect(() => {
+    loadSchedulerStatus();
+    const timer = setInterval(loadSchedulerStatus, 30000);
+    return () => clearInterval(timer);
+  }, [loadSchedulerStatus]);
+
+  const DB_TYPES = [
+    { value: "mysql", label: "MySQL" },
+    { value: "postgresql", label: "PostgreSQL" },
+    { value: "mongodb", label: "MongoDB" },
+  ];
+
+  const ENV_OPTIONS = [
+    { value: "prod", label: t("instances.env_prod") },
+    { value: "staging", label: t("instances.env_staging") },
+    { value: "dev", label: t("instances.env_dev") },
+  ];
 
   const load = () => {
     setLoading(true);
     api.get("/collector/instances/")
       .then(({ data }) => setInstances(data.results || data))
-      .catch(() => showToast("加载失败", "error"))
+      .catch(() => showToast(t("instances.load_failed"), "error"))
       .finally(() => setLoading(false));
   };
 
@@ -49,12 +68,12 @@ export default function InstancesPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("确定删除此实例？")) return;
+    if (!confirm(t("common.confirm_delete"))) return;
     try {
       await api.delete(`/collector/instances/${id}/`);
-      showToast("已删除");
+      showToast(t("instances.deleted"));
       load();
-    } catch { showToast("删除失败", "error"); }
+    } catch { showToast(t("instances.delete_failed"), "error"); }
   };
 
   const handleTest = async (id) => {
@@ -62,7 +81,7 @@ export default function InstancesPage() {
       const { data } = await api.post(`/collector/instances/${id}/test/`);
       showToast(data.message, data.success ? "success" : "error");
     } catch (e) {
-      showToast(e.response?.data?.message || "测试失败", "error");
+      showToast(e.response?.data?.message || t("instances.test_failed"), "error");
     }
   };
 
@@ -73,7 +92,7 @@ export default function InstancesPage() {
       load();
       if (expandedHistory === id) loadHistory(id, true);
     } catch (e) {
-      showToast(e.response?.data?.message || "采集失败", "error");
+      showToast(e.response?.data?.message || t("instances.collect_failed"), "error");
     }
   };
 
@@ -96,45 +115,45 @@ export default function InstancesPage() {
   };
 
   return (
-    <AppLayout title="实例管理">
+    <AppLayout title={t("instances.title")}>
       {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
 
       <div className="card">
         <div className="page-toolbar" style={{ marginBottom: 16 }}>
           <div className="page-toolbar-left">
-            <span style={{ fontSize: 14, color: "#534434" }}>
-              共 {instances.length} 个实例
+            <span style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
+              {t("instances.total", { count: instances.length })}
             </span>
           </div>
           <div className="page-toolbar-right">
             <button className="btn btn-primary" onClick={() => { setEditing(null); setShowModal(true); }}>
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
-              注册实例
+              {t("instances.register")}
             </button>
           </div>
         </div>
 
         {loading ? (
-          <div className="loading-wrap"><div className="mini-spinner" /> 加载中...</div>
+          <div className="loading-wrap"><div className="mini-spinner" /> {t("common.loading")}</div>
         ) : instances.length === 0 ? (
           <div className="empty-state">
             <span className="material-symbols-outlined empty-state-icon">dns</span>
-            <div className="empty-state-title">暂无实例</div>
-            <div className="empty-state-desc">点击「注册实例」添加第一个要监控的数据库</div>
+            <div className="empty-state-title">{t("instances.no_instances")}</div>
+            <div className="empty-state-desc">{t("instances.no_instances_desc")}</div>
           </div>
         ) : (
           <div className="table-wrap">
             <table className="sql-table">
               <thead>
                 <tr>
-                  <th>名称</th>
-                  <th>类型</th>
-                  <th>地址</th>
-                  <th>环境</th>
-                  <th>集群</th>
-                  <th>状态</th>
-                  <th>上次采集</th>
-                  <th style={{ textAlign: "right" }}>操作</th>
+                  <th>{t("instances.col_name")}</th>
+                  <th>{t("instances.col_type")}</th>
+                  <th>{t("instances.col_host")}</th>
+                  <th>{t("instances.col_env")}</th>
+                  <th>{t("instances.col_cluster")}</th>
+                  <th>{t("instances.col_status")}</th>
+                  <th>{t("instances.col_last_collect")}</th>
+                  <th style={{ textAlign: "right" }}>{t("instances.col_actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -153,26 +172,35 @@ export default function InstancesPage() {
                       </td>
                       <td>{inst.cluster || "-"}</td>
                       <td>
-                        <span className={`badge ${inst.is_active ? "badge-success" : "badge-muted"}`}>
-                          {inst.is_active ? "采集" : "停用"}
-                        </span>
+                        <div className="sched-status-cell">
+                          <span className={`badge ${inst.is_active ? "badge-success" : "badge-muted"}`}>
+                            {inst.is_active ? t("instances.status_active") : t("instances.status_inactive")}
+                          </span>
+                          {inst.is_active && (
+                            <span
+                              className={`sched-dot ${schedulerStatus[inst.id]?.active ? "sched-dot--running" : "sched-dot--idle"}`}
+                              title={schedulerStatus[inst.id]?.active
+                                ? `定时采集中 / 间隔 ${schedulerStatus[inst.id]?.interval}s`
+                                : "调度器未运行"}
+                            />
+                          )}
+                        </div>
                       </td>
                       <td className="text-muted" style={{ fontSize: 12 }}>
                         {fmtDatetime(inst.last_collected_at)}
                       </td>
                       <td style={{ textAlign: "right" }}>
                         <div className="action-group">
-                          <button className="btn btn-sm btn-success" onClick={() => handleTest(inst.id)} title="测试连接">连接</button>
-                          <button className="btn btn-sm btn-primary" onClick={() => handleCollect(inst.id)} title="手动采集">采集</button>
+                          <button className="btn btn-sm btn-success" onClick={() => handleTest(inst.id)}>{t("instances.btn_test")}</button>
+                          <button className="btn btn-sm btn-primary" onClick={() => handleCollect(inst.id)}>{t("instances.btn_collect")}</button>
                           <button
                             className={`btn btn-sm ${expandedHistory === inst.id ? "btn-active" : ""}`}
                             onClick={() => toggleHistory(inst.id)}
-                            title="采集历史"
                           >
-                            历史
+                            {t("instances.btn_history")}
                           </button>
-                          <button className="btn btn-sm" onClick={() => { setEditing(inst); setShowModal(true); }} title="编辑">编辑</button>
-                          <button className="btn btn-sm btn-danger" onClick={() => handleDelete(inst.id)} title="删除">删除</button>
+                          <button className="btn btn-sm" onClick={() => { setEditing(inst); setShowModal(true); }}>{t("common.edit")}</button>
+                          <button className="btn btn-sm btn-danger" onClick={() => handleDelete(inst.id)}>{t("common.delete")}</button>
                         </div>
                       </td>
                     </tr>
@@ -198,7 +226,11 @@ export default function InstancesPage() {
         <InstanceModal
           instance={editing}
           onClose={() => setShowModal(false)}
-          onSaved={() => { setShowModal(false); load(); showToast(editing ? "已更新" : "已创建"); }}
+          onSaved={() => {
+            setShowModal(false);
+            load();
+            showToast(editing ? t("instances.updated") : t("instances.created"));
+          }}
         />
       )}
     </AppLayout>
@@ -207,12 +239,13 @@ export default function InstancesPage() {
 
 /* ═══ 采集历史面板 ═══ */
 function HistoryPanel({ records, loading }) {
+  const { t } = useTranslation();
   if (loading) {
-    return <div className="history-panel"><div className="loading-wrap"><div className="mini-spinner" /> 加载中...</div></div>;
+    return <div className="history-panel"><div className="loading-wrap"><div className="mini-spinner" /> {t("common.loading")}</div></div>;
   }
   if (!records) return null;
   if (records.length === 0) {
-    return <div className="history-panel history-empty">暂无采集记录</div>;
+    return <div className="history-panel history-empty">{t("instances.no_history")}</div>;
   }
 
   return (
@@ -220,13 +253,13 @@ function HistoryPanel({ records, loading }) {
       <table className="history-table">
         <thead>
           <tr>
-            <th>开始时间</th>
-            <th>触发方式</th>
-            <th>状态</th>
-            <th className="text-right">耗时</th>
-            <th className="text-right">采集查询数</th>
-            <th className="text-right">写入行数</th>
-            <th>错误信息</th>
+            <th>{t("history.col_start")}</th>
+            <th>{t("history.col_trigger")}</th>
+            <th>{t("history.col_status")}</th>
+            <th className="text-right">{t("history.col_duration")}</th>
+            <th className="text-right">{t("history.col_queries")}</th>
+            <th className="text-right">{t("history.col_rows")}</th>
+            <th>{t("history.col_error")}</th>
           </tr>
         </thead>
         <tbody>
@@ -235,12 +268,12 @@ function HistoryPanel({ records, loading }) {
               <td className="text-mono" style={{ fontSize: 12 }}>{fmtDatetime(r.started_at)}</td>
               <td>
                 <span className={`badge ${r.triggered_by === "manual" ? "badge-warning" : "badge-muted"}`}>
-                  {r.triggered_by === "manual" ? "手动" : "定时"}
+                  {r.triggered_by === "manual" ? t("history.trigger_manual") : t("history.trigger_scheduled")}
                 </span>
               </td>
               <td>
                 <span className={`badge ${r.status === "success" ? "badge-success" : r.status === "partial" ? "badge-warning" : "badge-danger"}`}>
-                  {r.status === "success" ? "成功" : r.status === "partial" ? "部分" : "失败"}
+                  {r.status === "success" ? t("history.status_success") : r.status === "partial" ? t("history.status_partial") : t("history.status_failed")}
                 </span>
               </td>
               <td className="text-right" style={{ fontSize: 12 }}>
@@ -248,7 +281,7 @@ function HistoryPanel({ records, loading }) {
               </td>
               <td className="text-right">{r.queries_collected}</td>
               <td className="text-right">{r.rows_written}</td>
-              <td style={{ fontSize: 11, color: "#ba1a1a", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <td style={{ fontSize: 11, color: "var(--color-error-alt)", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {r.error_message || "—"}
               </td>
             </tr>
@@ -261,6 +294,18 @@ function HistoryPanel({ records, loading }) {
 
 /* ═══ 实例编辑模态框 ═══ */
 function InstanceModal({ instance, onClose, onSaved }) {
+  const { t } = useTranslation();
+  const DB_TYPES = [
+    { value: "mysql", label: "MySQL" },
+    { value: "postgresql", label: "PostgreSQL" },
+    { value: "mongodb", label: "MongoDB" },
+  ];
+  const ENV_OPTIONS = [
+    { value: "prod", label: t("instances.env_prod") },
+    { value: "staging", label: t("instances.env_staging") },
+    { value: "dev", label: t("instances.env_dev") },
+  ];
+
   const [form, setForm] = useState({
     name: instance?.name || "",
     db_type: instance?.db_type || "mysql",
@@ -285,7 +330,6 @@ function InstanceModal({ instance, onClose, onSaved }) {
     try {
       const payload = { ...form };
       if (instance && !payload.password) delete payload.password;
-
       if (instance) {
         await api.put(`/collector/instances/${instance.id}/`, payload);
       } else {
@@ -304,7 +348,7 @@ function InstanceModal({ instance, onClose, onSaved }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <span className="modal-title">{instance ? "编辑实例" : "注册实例"}</span>
+          <span className="modal-title">{instance ? t("instances.modal_edit") : t("instances.modal_create")}</span>
           <button className="modal-close" onClick={onClose}>
             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
           </button>
@@ -314,68 +358,68 @@ function InstanceModal({ instance, onClose, onSaved }) {
             {error && <div className="alert alert-error">{error}</div>}
 
             <div className="form-group">
-              <label className="form-label">名称</label>
-              <input className="form-input" value={form.name} onChange={(e) => handleChange("name", e.target.value)} required placeholder="如: db-prod-01" />
+              <label className="form-label">{t("instances.field_name")}</label>
+              <input className="form-input" value={form.name} onChange={(e) => handleChange("name", e.target.value)} required placeholder="db-prod-01" />
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">数据库类型</label>
+                <label className="form-label">{t("instances.field_db_type")}</label>
                 <select className="form-select" value={form.db_type} onChange={(e) => handleChange("db_type", e.target.value)}>
-                  {DB_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  {DB_TYPES.map((t2) => <option key={t2.value} value={t2.value}>{t2.label}</option>)}
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">环境</label>
+                <label className="form-label">{t("instances.field_env")}</label>
                 <select className="form-select" value={form.environment} onChange={(e) => handleChange("environment", e.target.value)}>
-                  {ENV_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  {ENV_OPTIONS.map((t2) => <option key={t2.value} value={t2.value}>{t2.label}</option>)}
                 </select>
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">主机地址</label>
+                <label className="form-label">{t("instances.field_host")}</label>
                 <input className="form-input" value={form.host} onChange={(e) => handleChange("host", e.target.value)} required placeholder="192.168.1.100" />
               </div>
               <div className="form-group">
-                <label className="form-label">端口</label>
+                <label className="form-label">{t("instances.field_port")}</label>
                 <input className="form-input" type="number" value={form.port} onChange={(e) => handleChange("port", parseInt(e.target.value))} required />
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">用户名</label>
+                <label className="form-label">{t("instances.field_username")}</label>
                 <input className="form-input" value={form.username} onChange={(e) => handleChange("username", e.target.value)} required />
               </div>
               <div className="form-group">
-                <label className="form-label">密码</label>
-                <input className="form-input" type="password" value={form.password} onChange={(e) => handleChange("password", e.target.value)} placeholder={instance ? "留空不修改" : ""} />
+                <label className="form-label">{t("instances.field_password")}</label>
+                <input className="form-input" type="password" value={form.password} onChange={(e) => handleChange("password", e.target.value)} placeholder={instance ? t("instances.pwd_placeholder") : ""} />
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">集群</label>
-                <input className="form-input" value={form.cluster} onChange={(e) => handleChange("cluster", e.target.value)} placeholder="可选" />
+                <label className="form-label">{t("instances.field_cluster")}</label>
+                <input className="form-input" value={form.cluster} onChange={(e) => handleChange("cluster", e.target.value)} placeholder={t("instances.cluster_optional")} />
               </div>
               <div className="form-group">
-                <label className="form-label">采集间隔 (秒)</label>
+                <label className="form-label">{t("instances.field_interval")}</label>
                 <input className="form-input" type="number" value={form.collect_interval} onChange={(e) => handleChange("collect_interval", parseInt(e.target.value))} />
               </div>
             </div>
 
             <div className="form-group" style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <input type="checkbox" checked={form.is_active} onChange={(e) => handleChange("is_active", e.target.checked)} id="active-check" />
-              <label htmlFor="active-check" style={{ fontSize: 13, cursor: "pointer" }}>启用自动采集</label>
+              <label htmlFor="active-check" style={{ fontSize: 13, cursor: "pointer", color: "var(--color-text)" }}>{t("instances.field_active")}</label>
             </div>
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn" onClick={onClose}>取消</button>
+            <button type="button" className="btn" onClick={onClose}>{t("common.cancel")}</button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? "保存中..." : "保存"}
+              {saving ? t("common.saving") : t("common.save")}
             </button>
           </div>
         </form>

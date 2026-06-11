@@ -10,4 +10,5 @@ app_name = "collector"
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("scheduler/status/", views.SchedulerStatusView.as_view(), name="scheduler-status"),
 ]
