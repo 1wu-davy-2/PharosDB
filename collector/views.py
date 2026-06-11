@@ -1,25 +1,30 @@
-from datetime import timezone as tz
-
+from rest_framework import serializers as drf_serializers
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .clickhouse import ClickHouseWriter
-from .collectors.mysql import MySQLCollector
 from .crypto import decrypt
-from .models import DatabaseInstance
+from .models import CollectionHistory, DatabaseInstance
 from .serializers import DatabaseInstanceSerializer
 
 
+class CollectionHistorySerializer(drf_serializers.ModelSerializer):
+    class Meta:
+        model = CollectionHistory
+        fields = [
+            "id", "triggered_by", "status", "started_at", "finished_at",
+            "duration_ms", "queries_collected", "rows_written", "error_message",
+        ]
+
+
 class DatabaseInstanceViewSet(viewsets.ModelViewSet):
-    """数据库实例 CRUD + 连接测试 + 手动采集。"""
+    """数据库实例 CRUD + 连接测试 + 手动采集 + 采集历史。"""
 
     queryset = DatabaseInstance.objects.all()
     serializer_class = DatabaseInstanceSerializer
 
     @action(detail=True, methods=["post"], url_path="test")
     def test_connection(self, request, pk=None):
-        """测试到目标数据库的连接。"""
         instance = self.get_object()
         password = decrypt(instance.password)
 
@@ -37,7 +42,9 @@ class DatabaseInstanceViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="collect")
     def collect_now(self, request, pk=None):
-        """手动触发一次数据采集。"""
+        """手动触发一次数据采集（写入历史，triggered_by=manual）。"""
+        from .tasks import _do_collect
+
         instance = self.get_object()
 
         if instance.db_type != "mysql":
@@ -46,31 +53,28 @@ class DatabaseInstanceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_501_NOT_IMPLEMENTED,
             )
 
-        try:
-            collector = MySQLCollector(instance)
-            rows = collector.run()
+        result = _do_collect(instance, triggered_by="manual")
 
-            if rows:
-                writer = ClickHouseWriter()
-                count = writer.write_metrics(rows)
-            else:
-                count = 0
-
-            from django.utils import timezone
-            instance.last_collected_at = timezone.now()
-            instance.save(update_fields=["last_collected_at"])
-
-            return Response({
-                "success": True,
-                "message": f"采集完成，写入 {count} 条指标",
-                "queries_collected": len(rows),
-                "rows_written": count,
-            })
-        except Exception as e:
+        if "error" in result:
             return Response(
-                {"success": False, "message": f"采集失败: {e}"},
+                {"success": False, "message": f"采集失败: {result['error']}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+        return Response({
+            "success": True,
+            "message": f"采集完成，写入 {result['rows_written']} 条指标",
+            "queries_collected": result["queries_collected"],
+            "rows_written": result["rows_written"],
+        })
+
+    @action(detail=True, methods=["get"], url_path="history")
+    def history(self, request, pk=None):
+        """GET /api/instances/<id>/history/?limit=20  查询采集历史。"""
+        instance = self.get_object()
+        limit = min(int(request.query_params.get("limit", 20)), 200)
+        qs = instance.collection_histories.all()[:limit]
+        return Response(CollectionHistorySerializer(qs, many=True).data)
 
     def _test_mysql(self, instance, password):
         import pymysql
@@ -87,7 +91,6 @@ class DatabaseInstanceViewSet(viewsets.ModelViewSet):
             cur.execute("SELECT VERSION()")
             version = cur.fetchone()[0]
 
-            # 检查 performance_schema 是否启用
             cur.execute("SELECT @@performance_schema")
             ps_enabled = cur.fetchone()[0]
 
@@ -103,14 +106,11 @@ class DatabaseInstanceViewSet(viewsets.ModelViewSet):
 
             return Response({
                 "success": True,
-                "message": f"MySQL 连接成功 (performance_schema 已启用)",
+                "message": "MySQL 连接成功 (performance_schema 已启用)",
                 "version": version,
             })
         except Exception as e:
-            return Response({
-                "success": False,
-                "message": f"连接失败: {e}",
-            })
+            return Response({"success": False, "message": f"连接失败: {e}"})
 
     def _test_postgresql(self, instance, password):
         return Response({

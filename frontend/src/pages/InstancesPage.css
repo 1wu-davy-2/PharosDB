@@ -5,3 +5,59 @@
   justify-content: flex-end;
   flex-wrap: wrap;
 }
+
+/* 历史展开行 */
+.history-row td {
+  background: #f8f9fa;
+  border-top: none;
+}
+
+.history-panel {
+  padding: 12px 20px 16px;
+  border-top: 2px solid #855300;
+}
+
+.history-empty {
+  font-size: 13px;
+  color: #534434;
+  padding: 16px 20px;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.history-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #534434;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 4px 8px 6px;
+  border-bottom: 1px solid #e0e3e5;
+}
+
+.history-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #191c1e;
+  vertical-align: middle;
+}
+
+.history-table tr:last-child td {
+  border-bottom: none;
+}
+
+.history-table tr:hover td {
+  background: #fff;
+}
+
+/* 历史按钮激活态 */
+.btn-active {
+  background: #f8f0e3 !important;
+  color: #855300 !important;
+  border-color: #855300 !important;
+}

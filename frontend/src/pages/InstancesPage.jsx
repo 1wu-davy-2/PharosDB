@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
 import "./InstancesPage.css";
@@ -15,12 +15,23 @@ const ENV_OPTIONS = [
   { value: "dev", label: "开发" },
 ];
 
+function fmtDatetime(val) {
+  if (!val) return "—";
+  const d = new Date(val);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} `
+       + `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 export default function InstancesPage() {
   const [instances, setInstances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [toast, setToast] = useState(null);
+  const [expandedHistory, setExpandedHistory] = useState(null);
+  const [historyData, setHistoryData] = useState({});
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -60,8 +71,27 @@ export default function InstancesPage() {
       const { data } = await api.post(`/collector/instances/${id}/collect/`);
       showToast(data.message, data.success ? "success" : "error");
       load();
+      if (expandedHistory === id) loadHistory(id, true);
     } catch (e) {
       showToast(e.response?.data?.message || "采集失败", "error");
+    }
+  };
+
+  const loadHistory = useCallback(async (id, silent = false) => {
+    if (!silent) setHistoryLoading(true);
+    try {
+      const { data } = await api.get(`/collector/instances/${id}/history/?limit=20`);
+      setHistoryData((prev) => ({ ...prev, [id]: data }));
+    } catch {}
+    if (!silent) setHistoryLoading(false);
+  }, []);
+
+  const toggleHistory = (id) => {
+    if (expandedHistory === id) {
+      setExpandedHistory(null);
+    } else {
+      setExpandedHistory(id);
+      loadHistory(id);
     }
   };
 
@@ -109,43 +139,54 @@ export default function InstancesPage() {
               </thead>
               <tbody>
                 {instances.map((inst) => (
-                  <tr key={inst.id}>
-                    <td style={{ fontWeight: 600 }}>{inst.name}</td>
-                    <td>
-                      <span className="badge badge-info">{inst.db_type.toUpperCase()}</span>
-                    </td>
-                    <td className="text-mono">{inst.host}:{inst.port}</td>
-                    <td>
-                      <span className={`badge ${inst.environment === "prod" ? "badge-danger" : inst.environment === "staging" ? "badge-warning" : "badge-muted"}`}>
-                        {ENV_OPTIONS.find(e => e.value === inst.environment)?.label || inst.environment}
-                      </span>
-                    </td>
-                    <td>{inst.cluster || "-"}</td>
-                    <td>
-                      <span className={`badge ${inst.is_active ? "badge-success" : "badge-muted"}`}>
-                        {inst.is_active ? "采集" : "停用"}
-                      </span>
-                    </td>
-                    <td className="text-muted" style={{ fontSize: 12 }}>
-                      {inst.last_collected_at || "从未采集"}
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      <div className="action-group">
-                        <button className="btn btn-sm btn-success" onClick={() => handleTest(inst.id)} title="测试连接">
-                          连接
-                        </button>
-                        <button className="btn btn-sm btn-primary" onClick={() => handleCollect(inst.id)} title="手动采集">
-                          采集
-                        </button>
-                        <button className="btn btn-sm" onClick={() => { setEditing(inst); setShowModal(true); }} title="编辑">
-                          编辑
-                        </button>
-                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(inst.id)} title="删除">
-                          删除
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                  <>
+                    <tr key={inst.id}>
+                      <td style={{ fontWeight: 600 }}>{inst.name}</td>
+                      <td>
+                        <span className="badge badge-info">{inst.db_type.toUpperCase()}</span>
+                      </td>
+                      <td className="text-mono">{inst.host}:{inst.port}</td>
+                      <td>
+                        <span className={`badge ${inst.environment === "prod" ? "badge-danger" : inst.environment === "staging" ? "badge-warning" : "badge-muted"}`}>
+                          {ENV_OPTIONS.find(e => e.value === inst.environment)?.label || inst.environment}
+                        </span>
+                      </td>
+                      <td>{inst.cluster || "-"}</td>
+                      <td>
+                        <span className={`badge ${inst.is_active ? "badge-success" : "badge-muted"}`}>
+                          {inst.is_active ? "采集" : "停用"}
+                        </span>
+                      </td>
+                      <td className="text-muted" style={{ fontSize: 12 }}>
+                        {fmtDatetime(inst.last_collected_at)}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        <div className="action-group">
+                          <button className="btn btn-sm btn-success" onClick={() => handleTest(inst.id)} title="测试连接">连接</button>
+                          <button className="btn btn-sm btn-primary" onClick={() => handleCollect(inst.id)} title="手动采集">采集</button>
+                          <button
+                            className={`btn btn-sm ${expandedHistory === inst.id ? "btn-active" : ""}`}
+                            onClick={() => toggleHistory(inst.id)}
+                            title="采集历史"
+                          >
+                            历史
+                          </button>
+                          <button className="btn btn-sm" onClick={() => { setEditing(inst); setShowModal(true); }} title="编辑">编辑</button>
+                          <button className="btn btn-sm btn-danger" onClick={() => handleDelete(inst.id)} title="删除">删除</button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expandedHistory === inst.id && (
+                      <tr key={`${inst.id}-history`} className="history-row">
+                        <td colSpan={8} style={{ padding: 0 }}>
+                          <HistoryPanel
+                            records={historyData[inst.id]}
+                            loading={historyLoading}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
@@ -161,6 +202,60 @@ export default function InstancesPage() {
         />
       )}
     </AppLayout>
+  );
+}
+
+/* ═══ 采集历史面板 ═══ */
+function HistoryPanel({ records, loading }) {
+  if (loading) {
+    return <div className="history-panel"><div className="loading-wrap"><div className="mini-spinner" /> 加载中...</div></div>;
+  }
+  if (!records) return null;
+  if (records.length === 0) {
+    return <div className="history-panel history-empty">暂无采集记录</div>;
+  }
+
+  return (
+    <div className="history-panel">
+      <table className="history-table">
+        <thead>
+          <tr>
+            <th>开始时间</th>
+            <th>触发方式</th>
+            <th>状态</th>
+            <th className="text-right">耗时</th>
+            <th className="text-right">采集查询数</th>
+            <th className="text-right">写入行数</th>
+            <th>错误信息</th>
+          </tr>
+        </thead>
+        <tbody>
+          {records.map((r) => (
+            <tr key={r.id}>
+              <td className="text-mono" style={{ fontSize: 12 }}>{fmtDatetime(r.started_at)}</td>
+              <td>
+                <span className={`badge ${r.triggered_by === "manual" ? "badge-warning" : "badge-muted"}`}>
+                  {r.triggered_by === "manual" ? "手动" : "定时"}
+                </span>
+              </td>
+              <td>
+                <span className={`badge ${r.status === "success" ? "badge-success" : r.status === "partial" ? "badge-warning" : "badge-danger"}`}>
+                  {r.status === "success" ? "成功" : r.status === "partial" ? "部分" : "失败"}
+                </span>
+              </td>
+              <td className="text-right" style={{ fontSize: 12 }}>
+                {r.duration_ms != null ? `${r.duration_ms} ms` : "—"}
+              </td>
+              <td className="text-right">{r.queries_collected}</td>
+              <td className="text-right">{r.rows_written}</td>
+              <td style={{ fontSize: 11, color: "#ba1a1a", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {r.error_message || "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

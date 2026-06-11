@@ -37,3 +37,41 @@ class DatabaseInstance(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.db_type}://{self.host}:{self.port})"
+
+
+class CollectionHistory(models.Model):
+    """每次采集的执行记录。"""
+
+    TRIGGER_CHOICES = [
+        ("scheduled", "定时"),
+        ("manual", "手动"),
+    ]
+    STATUS_CHOICES = [
+        ("success", "成功"),
+        ("failed", "失败"),
+        ("partial", "部分成功"),
+    ]
+
+    instance = models.ForeignKey(
+        DatabaseInstance,
+        on_delete=models.CASCADE,
+        related_name="collection_histories",
+        verbose_name="实例",
+    )
+    triggered_by = models.CharField("触发方式", max_length=16, choices=TRIGGER_CHOICES, default="scheduled")
+    status = models.CharField("状态", max_length=16, choices=STATUS_CHOICES, default="success")
+    started_at = models.DateTimeField("开始时间")
+    finished_at = models.DateTimeField("结束时间", null=True, blank=True)
+    duration_ms = models.IntegerField("耗时 (ms)", null=True, blank=True)
+    queries_collected = models.IntegerField("采集查询数", default=0)
+    rows_written = models.IntegerField("写入行数", default=0)
+    error_message = models.TextField("错误信息", blank=True, default="")
+
+    class Meta:
+        db_table = "collector_collection_history"
+        ordering = ["-started_at"]
+        verbose_name = "采集历史"
+        verbose_name_plural = verbose_name
+
+    def __str__(self):
+        return f"{self.instance.name} {self.started_at:%Y-%m-%d %H:%M:%S} [{self.status}]"
