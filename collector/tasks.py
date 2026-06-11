@@ -5,8 +5,6 @@ import time
 
 from django.utils import timezone
 
-logger = logging.getLogger(__name__)
-
 
 def _do_collect(instance, triggered_by: str) -> dict:
     """执行单实例采集并写入 CollectionHistory，返回结果 dict。"""
@@ -26,7 +24,12 @@ def _do_collect(instance, triggered_by: str) -> dict:
 
     try:
         if instance.db_type == "mysql":
+            from .collectors.mysql import MySQLCollector
             collector = MySQLCollector(instance)
+            rows = collector.run()
+        elif instance.db_type == "postgresql":
+            from .collectors.postgresql import PostgreSQLCollector
+            collector = PostgreSQLCollector(instance)
             rows = collector.run()
         else:
             raise NotImplementedError(f"暂不支持 {instance.db_type} 采集器")

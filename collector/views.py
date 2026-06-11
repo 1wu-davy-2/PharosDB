@@ -48,7 +48,7 @@ class DatabaseInstanceViewSet(viewsets.ModelViewSet):
 
         instance = self.get_object()
 
-        if instance.db_type != "mysql":
+        if instance.db_type not in ("mysql", "postgresql"):
             return Response(
                 {"success": False, "message": f"采集器尚未支持 {instance.db_type}"},
                 status=status.HTTP_501_NOT_IMPLEMENTED,
@@ -114,10 +114,36 @@ class DatabaseInstanceViewSet(viewsets.ModelViewSet):
             return Response({"success": False, "message": f"连接失败: {e}"})
 
     def _test_postgresql(self, instance, password):
-        return Response({
-            "success": False,
-            "message": "PostgreSQL 采集器尚未实现 (P5 阶段)",
-        }, status=status.HTTP_501_NOT_IMPLEMENTED)
+        import psycopg2
+        try:
+            conn = psycopg2.connect(
+                host=instance.host,
+                port=instance.port,
+                user=instance.username,
+                password=password,
+                connect_timeout=5,
+            )
+            cur = conn.cursor()
+            cur.execute("SELECT version()")
+            version = cur.fetchone()[0]
+            cur.execute("SELECT count(*) FROM pg_extension WHERE extname = 'pg_stat_statements'")
+            has_ext = cur.fetchone()[0] > 0
+            cur.close()
+            conn.close()
+
+            if not has_ext:
+                return Response({
+                    "success": False,
+                    "message": "pg_stat_statements 扩展未安装，请执行: CREATE EXTENSION pg_stat_statements",
+                    "version": version,
+                })
+            return Response({
+                "success": True,
+                "message": "PostgreSQL 连接成功 (pg_stat_statements 已安装)",
+                "version": version,
+            })
+        except Exception as e:
+            return Response({"success": False, "message": f"连接失败: {e}"})
 
     def _test_mongodb(self, instance, password):
         return Response({

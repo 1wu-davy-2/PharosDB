@@ -59,8 +59,7 @@ class _InstanceScheduler:
             instance = DatabaseInstance.objects.get(id=self.instance_id)
             if not instance.is_active:
                 return
-            if instance.db_type != "mysql":
-                # 暂不支持的类型静默跳过，不写失败历史
+            if instance.db_type not in ("mysql", "postgresql"):
                 logger.debug(f"[scheduler] 实例 {self.instance_id} ({instance.db_type}) 暂不支持，跳过")
                 return
             from .tasks import _do_collect
