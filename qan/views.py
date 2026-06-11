@@ -5,20 +5,21 @@ from . import services
 
 
 class TopQueriesView(APIView):
-    """GET /api/qan/top-queries/?service=xxx&period=1h&sort=m_query_time_sum&limit=20"""
+    """GET /api/qan/top-queries/?service=xxx&period=1h&sort=m_query_time_sum&limit=20&search=xxx&schema=xxx"""
 
     def get(self, request):
         service = request.query_params.get("service")
         if not service:
-            # 如果没指定 service，返回可用的服务列表
             service_list = services.get_service_list()
             return Response({"services": service_list, "message": "请指定 ?service= 参数"})
 
         period = request.query_params.get("period", "1h")
         sort_by = request.query_params.get("sort", "m_query_time_sum")
         limit = int(request.query_params.get("limit", 20))
+        search = request.query_params.get("search", "")
+        schema = request.query_params.get("schema", "")
 
-        queries = services.get_top_queries(service, period, sort_by, limit)
+        queries = services.get_top_queries(service, period, sort_by, limit, search, schema)
         return Response({"service": service, "period": period, "queries": queries})
 
 

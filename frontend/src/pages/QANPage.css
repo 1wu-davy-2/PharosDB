@@ -4,7 +4,7 @@
 .qan-filters {
   display: flex;
   align-items: flex-end;
-  gap: 20px;
+  gap: 16px;
   flex-wrap: wrap;
   padding: 14px 20px;
 }
@@ -13,6 +13,11 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.qan-filter-grow {
+  flex: 1;
+  min-width: 200px;
 }
 
 .qan-filter-label {
@@ -24,9 +29,13 @@
 }
 
 .qan-filter-select {
-  min-width: 140px;
+  min-width: 120px;
   padding: 6px 10px;
   font-size: 13px;
+}
+
+.qan-filter-narrow {
+  min-width: 70px;
 }
 
 .qan-period-tabs {
@@ -56,6 +65,70 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* 搜索框 */
+.qan-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.qan-search-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 18px;
+  color: #534434;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.qan-search-input {
+  padding-left: 34px !important;
+  padding-right: 30px !important;
+  min-width: 240px;
+}
+
+.qan-search-clear {
+  position: absolute;
+  right: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #534434;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.qan-search-clear:hover { background: #eceef0; }
+
+.qan-search-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #534434;
+  padding: 6px 0;
+}
+
+.qan-search-hint-clear {
+  background: none;
+  border: 1px solid #e0e3e5;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #855300;
+  cursor: pointer;
+  padding: 1px 8px;
+  font-family: inherit;
+}
+
+.qan-search-hint-clear:hover { background: #f8f0e3; }
+
+.qan-result-count {
+  font-size: 12px;
+  color: #534434;
+}
+
 /* 概览卡片行 */
 .qan-overview-row {
   display: grid;
@@ -71,6 +144,11 @@
 
 .qan-row:hover {
   background: #f8f0e3 !important;
+}
+
+.qan-row--active {
+  background: #f8f0e3 !important;
+  border-left: 3px solid #855300;
 }
 
 /* 指纹 */
@@ -95,11 +173,76 @@
   font-family: inherit;
 }
 
-/* 详情面板 */
-.qan-detail {
-  margin-top: 0;
+/* ═══════════════════ 侧栏 Drawer ═══════════════════ */
+.qan-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 90;
+  animation: fadeIn 0.2s ease;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.qan-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 560px;
+  max-width: 90vw;
+  background: #fff;
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.qan-drawer--open {
+  transform: translateX(0);
+}
+
+.qan-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e3e5;
+  flex-shrink: 0;
+}
+
+.qan-drawer-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #191c1e;
+}
+
+.qan-drawer-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #534434;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+
+.qan-drawer-close:hover { background: #eceef0; }
+
+.qan-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* 详情内容 */
 .qan-detail-section {
   margin-bottom: 16px;
 }
@@ -128,8 +271,8 @@
 /* 指标网格 */
 .qan-detail-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
   margin-bottom: 16px;
 }
 
@@ -150,7 +293,7 @@
 }
 
 .qan-metric-value {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: #191c1e;
 }
@@ -186,9 +329,7 @@
   min-height: 2px;
 }
 
-.qan-trend-bar:hover {
-  opacity: 0.8;
-}
+.qan-trend-bar:hover { opacity: 0.8; }
 
 .qan-trend-label {
   font-size: 9px;
@@ -199,11 +340,14 @@
 /* 响应式 */
 @media (max-width: 1024px) {
   .qan-overview-row { grid-template-columns: repeat(2, 1fr); }
-  .qan-detail-grid { grid-template-columns: repeat(3, 1fr); }
+  .qan-detail-grid { grid-template-columns: repeat(2, 1fr); }
+  .qan-drawer { width: 480px; }
 }
 
 @media (max-width: 768px) {
   .qan-filters { flex-direction: column; align-items: stretch; }
   .qan-overview-row { grid-template-columns: 1fr 1fr; }
-  .qan-detail-grid { grid-template-columns: repeat(2, 1fr); }
+  .qan-detail-grid { grid-template-columns: 1fr 1fr; }
+  .qan-drawer { width: 100%; max-width: 100%; }
+  .qan-search-input { min-width: 100%; }
 }

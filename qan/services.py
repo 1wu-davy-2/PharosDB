@@ -14,7 +14,8 @@ def _get_client():
     )
 
 
-def get_top_queries(service_name: str, period: str = "1h", sort_by: str = "m_query_time_sum", limit: int = 20):
+def get_top_queries(service_name: str, period: str = "1h", sort_by: str = "m_query_time_sum",
+                    limit: int = 20, search: str = "", schema: str = ""):
     """获取 Top N 慢查询。
 
     Args:
@@ -22,6 +23,8 @@ def get_top_queries(service_name: str, period: str = "1h", sort_by: str = "m_que
         period: 时间范围 (如 1h, 6h, 24h, 7d)
         sort_by: 排序字段
         limit: 返回条数
+        search: SQL 模糊搜索关键词
+        schema: schema 过滤
     """
     client = _get_client()
 
@@ -47,6 +50,16 @@ def get_top_queries(service_name: str, period: str = "1h", sort_by: str = "m_que
         "num_queries": "num_queries",
     }
     order_col = sort_map.get(sort_by, "total_query_time")
+
+    # 构建过滤条件
+    params = {"service": service_name, "seconds": seconds, "limit": limit}
+    outer_where = ""
+    if search:
+        outer_where += " WHERE fingerprint LIKE %(search)s"
+        params["search"] = f"%{search}%"
+    if schema:
+        outer_where += (" WHERE" if "WHERE" not in outer_where else " AND") + " `schema` = %(schema)s"
+        params["schema"] = schema
 
     sql = f"""
         SELECT
@@ -84,15 +97,12 @@ def get_top_queries(service_name: str, period: str = "1h", sort_by: str = "m_que
               AND period_start >= now() - INTERVAL %(seconds)s SECOND
             GROUP BY queryid
         )
+        {outer_where}
         ORDER BY {order_col} DESC
         LIMIT %(limit)s
     """
 
-    rows = client.execute(sql, {
-        "service": service_name,
-        "seconds": seconds,
-        "limit": limit,
-    })
+    rows = client.execute(sql, params)
 
     columns = [
         "queryid", "fingerprint", "schema", "num_queries",

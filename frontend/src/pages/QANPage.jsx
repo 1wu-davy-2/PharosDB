@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
 import "./QANPage.css";
@@ -18,17 +18,25 @@ const SORT_OPTIONS = [
   { value: "m_no_index_used_sum", label: "无索引" },
 ];
 
+const LIMIT_OPTIONS = [10, 20, 50, 100];
+
 export default function QANPage() {
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState("");
   const [period, setPeriod] = useState("1h");
   const [sortBy, setSortBy] = useState("m_query_time_sum");
+  const [limit, setLimit] = useState(20);
+  const [searchText, setSearchText] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [schemaFilter, setSchemaFilter] = useState("");
   const [queries, setQueries] = useState([]);
   const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [detailQuery, setDetailQuery] = useState(null);
   const [detail, setDetail] = useState(null);
   const [trend, setTrend] = useState([]);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   // 加载服务列表
   useEffect(() => {
@@ -45,8 +53,17 @@ export default function QANPage() {
     if (!selectedService) return;
     setLoading(true);
 
+    const params = new URLSearchParams({
+      service: selectedService,
+      period,
+      sort: sortBy,
+      limit: String(limit),
+    });
+    if (searchText) params.set("search", searchText);
+    if (schemaFilter) params.set("schema", schemaFilter);
+
     Promise.all([
-      api.get(`/qan/top-queries/?service=${selectedService}&period=${period}&sort=${sortBy}&limit=20`),
+      api.get(`/qan/top-queries/?${params}`),
       api.get(`/qan/overview/?service=${selectedService}&period=${period}`),
     ])
       .then(([qRes, oRes]) => {
@@ -55,13 +72,28 @@ export default function QANPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [selectedService, period, sortBy]);
+  }, [selectedService, period, sortBy, limit, searchText, schemaFilter]);
 
-  // 加载查询详情
+  // 搜索提交
+  const handleSearch = useCallback(() => {
+    setSearchText(searchInput);
+  }, [searchInput]);
+
+  const handleSearchKey = useCallback((e) => {
+    if (e.key === "Enter") setSearchText(searchInput);
+    if (e.key === "Escape") { setSearchInput(""); setSearchText(""); }
+  }, [searchInput]);
+
+  // 获取唯一 schema 列表
+  const schemas = [...new Set(queries.map((q) => q.schema).filter(Boolean))];
+
+  // 加载查询详情 → 打开侧栏
   const loadDetail = async (queryid) => {
     setDetailQuery(queryid);
+    setDrawerOpen(true);
     setDetail(null);
     setTrend([]);
+    setDetailLoading(true);
     try {
       const [dRes, tRes] = await Promise.all([
         api.get(`/qan/query/${queryid}/?service=${selectedService}&period=${period}`),
@@ -69,7 +101,14 @@ export default function QANPage() {
       ]);
       setDetail(dRes.data);
       setTrend(tRes.data.trend || []);
-    } catch {}
+    } catch {} finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    setTimeout(() => { setDetailQuery(null); setDetail(null); }, 300);
   };
 
   const fmtTime = (seconds) => {
@@ -97,6 +136,7 @@ export default function QANPage() {
             {services.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
+
         <div className="qan-filter-group">
           <label className="qan-filter-label">时间范围</label>
           <div className="qan-period-tabs">
@@ -107,13 +147,58 @@ export default function QANPage() {
             ))}
           </div>
         </div>
+
         <div className="qan-filter-group">
           <label className="qan-filter-label">排序</label>
           <select className="form-select qan-filter-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
             {SORT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </div>
+
+        <div className="qan-filter-group">
+          <label className="qan-filter-label">条数</label>
+          <select className="form-select qan-filter-select qan-filter-narrow" value={limit} onChange={(e) => setLimit(Number(e.target.value))}>
+            {LIMIT_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+
+        <div className="qan-filter-group qan-filter-grow">
+          <label className="qan-filter-label">SQL 搜索</label>
+          <div className="qan-search-wrap">
+            <span className="material-symbols-outlined qan-search-icon">search</span>
+            <input
+              className="form-input qan-search-input"
+              placeholder="模糊匹配 SQL 关键词..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={handleSearchKey}
+            />
+            {searchInput && (
+              <button className="qan-search-clear" onClick={() => { setSearchInput(""); setSearchText(""); }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {schemas.length > 0 && (
+          <div className="qan-filter-group">
+            <label className="qan-filter-label">Schema</label>
+            <select className="form-select qan-filter-select" value={schemaFilter} onChange={(e) => setSchemaFilter(e.target.value)}>
+              <option value="">全部</option>
+              {schemas.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        )}
       </div>
+
+      {/* 搜索提示 */}
+      {searchText && (
+        <div className="qan-search-hint">
+          搜索: "<strong>{searchText}</strong>"
+          <button className="qan-search-hint-clear" onClick={() => { setSearchInput(""); setSearchText(""); }}>清除</button>
+        </div>
+      )}
 
       {/* 概览卡片 */}
       {overview && (
@@ -141,6 +226,7 @@ export default function QANPage() {
       <div className="card" style={{ overflow: "hidden" }}>
         <div className="card-header">
           <h2 className="card-title">Top 慢查询</h2>
+          <span className="qan-result-count">{queries.length} 条结果</span>
         </div>
         {loading ? (
           <div className="loading-wrap"><div className="mini-spinner" /> 加载中...</div>
@@ -148,7 +234,7 @@ export default function QANPage() {
           <div className="empty-state">
             <span className="material-symbols-outlined empty-state-icon">query_stats</span>
             <div className="empty-state-title">暂无数据</div>
-            <div className="empty-state-desc">请先注册实例并执行采集，数据将在此展示</div>
+            <div className="empty-state-desc">{searchText ? "未匹配到相关 SQL，请尝试其他关键词" : "请先注册实例并执行采集，数据将在此展示"}</div>
           </div>
         ) : (
           <div className="table-wrap">
@@ -167,7 +253,7 @@ export default function QANPage() {
               </thead>
               <tbody>
                 {queries.map((q, i) => (
-                  <tr key={q.queryid} className="qan-row" onClick={() => loadDetail(q.queryid)}>
+                  <tr key={q.queryid} className={`qan-row ${detailQuery === q.queryid ? "qan-row--active" : ""}`} onClick={() => loadDetail(q.queryid)}>
                     <td className="text-muted">{i + 1}</td>
                     <td>
                       <div className="qan-fingerprint" title={q.fingerprint}>
@@ -193,97 +279,105 @@ export default function QANPage() {
         )}
       </div>
 
-      {/* 查询详情面板 */}
-      {detailQuery && detail && (
-        <div className="card qan-detail">
-          <div className="card-header">
-            <h2 className="card-title">查询详情</h2>
-            <button className="btn btn-sm" onClick={() => { setDetailQuery(null); setDetail(null); }}>关闭</button>
-          </div>
-
-          <div className="qan-detail-section">
-            <div className="qan-detail-label">SQL 指纹</div>
-            <pre className="qan-sql-block">{detail.fingerprint}</pre>
-          </div>
-
-          {detail.example && (
-            <div className="qan-detail-section">
-              <div className="qan-detail-label">示例 SQL</div>
-              <pre className="qan-sql-block">{detail.example}</pre>
-            </div>
-          )}
-
-          <div className="qan-detail-grid">
-            <div className="qan-metric">
-              <span className="qan-metric-label">执行次数</span>
-              <span className="qan-metric-value">{fmtNum(detail.num_queries)}</span>
-            </div>
-            <div className="qan-metric">
-              <span className="qan-metric-label">总耗时</span>
-              <span className="qan-metric-value">{fmtTime(detail.total_query_time)}</span>
-            </div>
-            <div className="qan-metric">
-              <span className="qan-metric-label">平均耗时</span>
-              <span className="qan-metric-value">{fmtTime(detail.avg_query_time)}</span>
-            </div>
-            <div className="qan-metric">
-              <span className="qan-metric-label">最大耗时</span>
-              <span className="qan-metric-value">{fmtTime(detail.max_query_time)}</span>
-            </div>
-            <div className="qan-metric">
-              <span className="qan-metric-label">返回行数</span>
-              <span className="qan-metric-value">{fmtNum(detail.total_rows_sent)}</span>
-            </div>
-            <div className="qan-metric">
-              <span className="qan-metric-label">扫描行数</span>
-              <span className="qan-metric-value">{fmtNum(detail.total_rows_examined)}</span>
-            </div>
-            <div className="qan-metric">
-              <span className="qan-metric-label">锁等待</span>
-              <span className="qan-metric-value">{fmtTime(detail.total_lock_time)}</span>
-            </div>
-            <div className="qan-metric">
-              <span className="qan-metric-label">临时表</span>
-              <span className="qan-metric-value">{fmtNum(detail.total_tmp_tables)}</span>
-            </div>
-            <div className="qan-metric">
-              <span className="qan-metric-label">全表扫描</span>
-              <span className="qan-metric-value" style={{ color: detail.full_scan_count > 0 ? "#ba1a1a" : undefined }}>{fmtNum(detail.full_scan_count)}</span>
-            </div>
-            <div className="qan-metric">
-              <span className="qan-metric-label">无索引</span>
-              <span className="qan-metric-value" style={{ color: detail.no_index_used_count > 0 ? "#ba1a1a" : undefined }}>{fmtNum(detail.no_index_used_count)}</span>
-            </div>
-            <div className="qan-metric">
-              <span className="qan-metric-label">Filesort</span>
-              <span className="qan-metric-value">{fmtNum(detail.filesort_count)}</span>
-            </div>
-            <div className="qan-metric">
-              <span className="qan-metric-label">发送字节</span>
-              <span className="qan-metric-value">{fmtNum(detail.total_bytes_sent)}</span>
-            </div>
-          </div>
-
-          {/* 趋势图 */}
-          {trend.length > 0 && (
-            <div className="qan-detail-section">
-              <div className="qan-detail-label">24h 趋势</div>
-              <div className="qan-trend-chart">
-                {trend.map((t, i) => {
-                  const maxTime = Math.max(...trend.map((x) => x.total_query_time));
-                  const height = maxTime > 0 ? (t.total_query_time / maxTime) * 100 : 0;
-                  return (
-                    <div key={i} className="qan-trend-bar-wrap">
-                      <div className="qan-trend-bar" style={{ height: `${Math.max(height, 2)}%` }} title={`${fmtTime(t.avg_query_time)} / ${fmtNum(t.num_queries)}次`} />
-                      <span className="qan-trend-label">{new Date(t.hour).getHours()}:00</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+      {/* 侧栏详情 Drawer */}
+      {drawerOpen && <div className="qan-drawer-overlay" onClick={closeDrawer} />}
+      <div className={`qan-drawer ${drawerOpen ? "qan-drawer--open" : ""}`}>
+        <div className="qan-drawer-header">
+          <h2 className="qan-drawer-title">查询详情</h2>
+          <button className="qan-drawer-close" onClick={closeDrawer}>
+            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>close</span>
+          </button>
         </div>
-      )}
+
+        <div className="qan-drawer-body">
+          {detailLoading ? (
+            <div className="loading-wrap"><div className="mini-spinner" /> 加载中...</div>
+          ) : detail ? (
+            <>
+              <div className="qan-detail-section">
+                <div className="qan-detail-label">SQL 指纹</div>
+                <pre className="qan-sql-block">{detail.fingerprint}</pre>
+              </div>
+
+              {detail.example && (
+                <div className="qan-detail-section">
+                  <div className="qan-detail-label">示例 SQL</div>
+                  <pre className="qan-sql-block">{detail.example}</pre>
+                </div>
+              )}
+
+              <div className="qan-detail-grid">
+                <div className="qan-metric">
+                  <span className="qan-metric-label">执行次数</span>
+                  <span className="qan-metric-value">{fmtNum(detail.num_queries)}</span>
+                </div>
+                <div className="qan-metric">
+                  <span className="qan-metric-label">总耗时</span>
+                  <span className="qan-metric-value">{fmtTime(detail.total_query_time)}</span>
+                </div>
+                <div className="qan-metric">
+                  <span className="qan-metric-label">平均耗时</span>
+                  <span className="qan-metric-value">{fmtTime(detail.avg_query_time)}</span>
+                </div>
+                <div className="qan-metric">
+                  <span className="qan-metric-label">最大耗时</span>
+                  <span className="qan-metric-value">{fmtTime(detail.max_query_time)}</span>
+                </div>
+                <div className="qan-metric">
+                  <span className="qan-metric-label">返回行数</span>
+                  <span className="qan-metric-value">{fmtNum(detail.total_rows_sent)}</span>
+                </div>
+                <div className="qan-metric">
+                  <span className="qan-metric-label">扫描行数</span>
+                  <span className="qan-metric-value">{fmtNum(detail.total_rows_examined)}</span>
+                </div>
+                <div className="qan-metric">
+                  <span className="qan-metric-label">锁等待</span>
+                  <span className="qan-metric-value">{fmtTime(detail.total_lock_time)}</span>
+                </div>
+                <div className="qan-metric">
+                  <span className="qan-metric-label">临时表</span>
+                  <span className="qan-metric-value">{fmtNum(detail.total_tmp_tables)}</span>
+                </div>
+                <div className="qan-metric">
+                  <span className="qan-metric-label">全表扫描</span>
+                  <span className="qan-metric-value" style={{ color: detail.full_scan_count > 0 ? "#ba1a1a" : undefined }}>{fmtNum(detail.full_scan_count)}</span>
+                </div>
+                <div className="qan-metric">
+                  <span className="qan-metric-label">无索引</span>
+                  <span className="qan-metric-value" style={{ color: detail.no_index_used_count > 0 ? "#ba1a1a" : undefined }}>{fmtNum(detail.no_index_used_count)}</span>
+                </div>
+                <div className="qan-metric">
+                  <span className="qan-metric-label">Filesort</span>
+                  <span className="qan-metric-value">{fmtNum(detail.filesort_count)}</span>
+                </div>
+                <div className="qan-metric">
+                  <span className="qan-metric-label">发送字节</span>
+                  <span className="qan-metric-value">{fmtNum(detail.total_bytes_sent)}</span>
+                </div>
+              </div>
+
+              {trend.length > 0 && (
+                <div className="qan-detail-section">
+                  <div className="qan-detail-label">24h 趋势</div>
+                  <div className="qan-trend-chart">
+                    {trend.map((t, i) => {
+                      const maxTime = Math.max(...trend.map((x) => x.total_query_time));
+                      const height = maxTime > 0 ? (t.total_query_time / maxTime) * 100 : 0;
+                      return (
+                        <div key={i} className="qan-trend-bar-wrap">
+                          <div className="qan-trend-bar" style={{ height: `${Math.max(height, 2)}%` }} title={`${fmtTime(t.avg_query_time)} / ${fmtNum(t.num_queries)}次`} />
+                          <span className="qan-trend-label">{new Date(t.hour).getHours()}:00</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : null}
+        </div>
+      </div>
     </AppLayout>
   );
 }
