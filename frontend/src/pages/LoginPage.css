@@ -450,6 +450,30 @@
   color: rgba(156, 163, 175, 0.4);
 }
 
+/* ── Lang toggle (top-right corner on login page) ── */
+.login-lang-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #d1d5db;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+}
+
+.login-lang-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
 /* ── Responsive ── */
 @media (max-width: 480px) {
   .login-lighthouse-area {

@@ -122,5 +122,121 @@ class SchedulerRegistry:
             ]
 
 
+class LockScheduler:
+    """单实例的锁快照自适应调度器。
+
+    无锁时 30s 轮询；检测到锁时自动切到 5s；锁清除后回到 30s。
+    """
+
+    INTERVAL_IDLE = 30
+    INTERVAL_ACTIVE = 5
+
+    def __init__(self, instance_id: int):
+        self.instance_id = instance_id
+        self._timer: threading.Timer | None = None
+        self._stopped = False
+        self._lock = threading.Lock()
+        self._high_freq = False
+
+    def start(self):
+        with self._lock:
+            self._stopped = False
+        self._schedule_next(self.INTERVAL_IDLE)
+        logger.info(f"[LockScheduler] 实例 {self.instance_id} 启动锁快照采集")
+
+    def stop(self):
+        with self._lock:
+            self._stopped = True
+            if self._timer:
+                self._timer.cancel()
+                self._timer = None
+        logger.info(f"[LockScheduler] 实例 {self.instance_id} 停止锁快照采集")
+
+    def _schedule_next(self, interval: int):
+        with self._lock:
+            if self._stopped:
+                return
+            self._timer = threading.Timer(interval, self._run)
+            self._timer.daemon = True
+            self._timer.start()
+
+    def _run(self):
+        with self._lock:
+            if self._stopped:
+                return
+        try:
+            from .models import DatabaseInstance
+            instance = DatabaseInstance.objects.get(id=self.instance_id)
+            if not instance.is_active or instance.db_type != "mysql":
+                self._schedule_next(self.INTERVAL_IDLE)
+                return
+
+            from .collectors.lock_snapshot import LockSnapshotCollector
+            result = LockSnapshotCollector(instance).collect()
+
+            if result.has_locks:
+                if not self._high_freq:
+                    self._high_freq = True
+                    logger.info(
+                        f"[LockScheduler] 实例 {self.instance_id} 检测到锁，切换 5s 高频模式"
+                    )
+                self._schedule_next(self.INTERVAL_ACTIVE)
+            else:
+                if self._high_freq:
+                    self._high_freq = False
+                    logger.info(
+                        f"[LockScheduler] 实例 {self.instance_id} 锁已清除，恢复 30s 轮询"
+                    )
+                self._schedule_next(self.INTERVAL_IDLE)
+        except Exception as e:
+            logger.error(f"[LockScheduler] 实例 {self.instance_id} 异常: {e}")
+            self._schedule_next(self.INTERVAL_IDLE)
+
+
+class LockSchedulerRegistry:
+    """全局锁采集调度器注册表。"""
+
+    def __init__(self):
+        self._schedulers: dict[int, LockScheduler] = {}
+        self._lock = threading.Lock()
+
+    def start_instance(self, instance_id: int):
+        with self._lock:
+            if instance_id in self._schedulers:
+                self._schedulers[instance_id].stop()
+            sched = LockScheduler(instance_id)
+            self._schedulers[instance_id] = sched
+        sched.start()
+
+    def stop_instance(self, instance_id: int):
+        with self._lock:
+            sched = self._schedulers.pop(instance_id, None)
+        if sched:
+            sched.stop()
+
+    def load_from_db(self):
+        """Django 启动后从数据库恢复所有 active MySQL 实例的锁采集调度。"""
+        try:
+            from .models import DatabaseInstance
+            instances = DatabaseInstance.objects.filter(is_active=True, db_type="mysql")
+            for inst in instances:
+                self.start_instance(inst.id)
+            logger.info(f"[LockScheduler] 从数据库恢复 {instances.count()} 个实例的锁采集调度")
+        except Exception as e:
+            logger.error(f"[LockScheduler] 恢复锁采集调度失败: {e}")
+
+    def status(self) -> list[dict]:
+        with self._lock:
+            return [
+                {
+                    "instance_id": iid,
+                    "high_freq": s._high_freq,
+                    "active": not s._stopped,
+                }
+                for iid, s in self._schedulers.items()
+            ]
+
+
 # 全局单例
 registry = SchedulerRegistry()
+lock_registry = LockSchedulerRegistry()

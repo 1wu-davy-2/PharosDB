@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useTranslation } from "react-i18next";
 import AppLayout from "../components/AppLayout";
 import api from "../services/api";
 import "./DashboardPage.css";
 
-/* ── 图标组件 ── */
 const Icon = ({ name, size = 20 }) => <span className="material-symbols-outlined" style={{ fontSize: size }}>{name}</span>;
 
-/* ═══════════════════ 统计卡片 ═══════════════════ */
 function StatCard({ label, value, trend, trendUp, statusColor }) {
   return (
     <div className="stat-card">
@@ -29,7 +26,6 @@ function StatCard({ label, value, trend, trendUp, statusColor }) {
   );
 }
 
-/* ═══════════════════ 告警列表 ═══════════════════ */
 const alertsData = [
   { severity: "critical", title: "High CPU Utilization", detail: "Instance db-prod-01 reached 95% CPU", time: "2 mins ago" },
   { severity: "warning", title: "Slow Query Spike", detail: "Detected >100 queries over 2s limit", time: "15 mins ago" },
@@ -39,15 +35,14 @@ const alertsData = [
 
 const severityColor = { critical: "#ef4444", warning: "#f59e0b", info: "#3b82f6" };
 
-/* ═══════════════════ 慢查询表格 ═══════════════════ */
 const slowQueries = [
   { rank: 1, fingerprint: "SELECT * FROM users WHERE status = ? AND last_login < ?...", avgTime: "4.2s", execCount: "12,450", trend: "up" },
   { rank: 2, fingerprint: "UPDATE orders SET state = ? WHERE order_id IN (...)", avgTime: "2.8s", execCount: "3,120", trend: "flat" },
   { rank: 3, fingerprint: "DELETE FROM session_logs WHERE created_at < ?", avgTime: "1.5s", execCount: "850", trend: "down" },
 ];
 
-/* ═══════════════════ 主仪表盘 ═══════════════════ */
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const [instances, setInstances] = useState([]);
   const [overview, setOverview] = useState(null);
 
@@ -56,7 +51,6 @@ export default function DashboardPage() {
       .then(({ data }) => setInstances(data.results || data))
       .catch(() => {});
 
-    // 尝试加载第一个服务的概览
     api.get("/qan/top-queries/")
       .then(({ data }) => {
         if (data.services?.length > 0) {
@@ -70,8 +64,7 @@ export default function DashboardPage() {
   const activeCount = instances.filter((i) => i.is_active).length;
 
   return (
-    <AppLayout title="监控总览">
-      {/* Row 1: 统计卡片 */}
+    <AppLayout title={t("dashboard.title")}>
       <div className="stats-row">
         <StatCard label="Active Instances" value={activeCount || "-"} trend={instances.length > 0 ? `${instances.length} total` : undefined} trendUp statusColor="#10b981" />
         <StatCard label="Unique Queries" value={overview?.unique_queries ? String(Math.round(overview.unique_queries)) : "-"} statusColor="#f59e0b" />
@@ -79,11 +72,10 @@ export default function DashboardPage() {
         <StatCard label="No-Index Queries" value={overview?.no_index_queries ? String(Math.round(overview.no_index_queries)) : "-"} trendUp={false} statusColor={overview?.no_index_queries > 0 ? "#ef4444" : "#10b981"} />
       </div>
 
-      {/* Row 2: 图表 + 告警 */}
       <div className="charts-row">
         <div className="card chart-card">
           <div className="card-header">
-            <h2 className="card-title">数据库健康概览</h2>
+            <h2 className="card-title">{t("dashboard.health_overview")}</h2>
             <div className="chart-tabs">
               <span className="chart-tab">1H</span>
               <span className="chart-tab chart-tab--active">24H</span>
@@ -104,8 +96,8 @@ export default function DashboardPage() {
 
         <div className="card alerts-card">
           <div className="card-header">
-            <h2 className="card-title">最近告警</h2>
-            <span className="card-link">View All</span>
+            <h2 className="card-title">{t("dashboard.recent_alerts")}</h2>
+            <span className="card-link">{t("dashboard.view_all")}</span>
           </div>
           <div className="alerts-list">
             {alertsData.map((a, i) => (
@@ -122,9 +114,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Row 3: 慢查询表格 */}
       <div className="card table-card">
-        <h2 className="card-title" style={{ marginBottom: 16 }}>Top 10 慢查询</h2>
+        <h2 className="card-title" style={{ marginBottom: 16 }}>{t("dashboard.top_slow")}</h2>
         <div className="table-wrap">
           <table className="sql-table">
             <thead>

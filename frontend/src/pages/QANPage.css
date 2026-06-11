@@ -23,7 +23,7 @@
 .qan-filter-label {
   font-size: 11px;
   font-weight: 600;
-  color: #534434;
+  color: var(--color-text-muted);
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
@@ -41,7 +41,7 @@
 .qan-period-tabs {
   display: flex;
   gap: 2px;
-  background: #eceef0;
+  background: var(--color-surface-subtle);
   border-radius: 6px;
   padding: 2px;
 }
@@ -53,15 +53,15 @@
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: #534434;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: all 0.15s;
   font-family: inherit;
 }
 
 .qan-period-tab--active {
-  background: #fff;
-  color: #855300;
+  background: var(--color-surface);
+  color: var(--color-accent);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -76,7 +76,7 @@
   position: absolute;
   left: 10px;
   font-size: 18px;
-  color: #534434;
+  color: var(--color-text-muted);
   pointer-events: none;
   opacity: 0.5;
 }
@@ -93,40 +93,40 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #534434;
+  color: var(--color-text-muted);
   padding: 4px;
   border-radius: 4px;
   display: flex;
   align-items: center;
 }
 
-.qan-search-clear:hover { background: #eceef0; }
+.qan-search-clear:hover { background: var(--color-surface-subtle); }
 
 .qan-search-hint {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #534434;
+  color: var(--color-text-muted);
   padding: 6px 0;
 }
 
 .qan-search-hint-clear {
   background: none;
-  border: 1px solid #e0e3e5;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 11px;
-  color: #855300;
+  color: var(--color-accent);
   cursor: pointer;
   padding: 1px 8px;
   font-family: inherit;
 }
 
-.qan-search-hint-clear:hover { background: #f8f0e3; }
+.qan-search-hint-clear:hover { background: var(--color-accent-light); }
 
 .qan-result-count {
   font-size: 12px;
-  color: #534434;
+  color: var(--color-text-muted);
 }
 
 /* 概览卡片行 */
@@ -143,19 +143,19 @@
 }
 
 .qan-row:hover {
-  background: #f8f0e3 !important;
+  background: var(--color-accent-light) !important;
 }
 
 .qan-row--active {
-  background: #f8f0e3 !important;
-  border-left: 3px solid #855300;
+  background: var(--color-accent-light) !important;
+  border-left: 3px solid var(--color-accent);
 }
 
 /* 指纹 */
 .qan-fingerprint {
   font-family: "JetBrains Mono", "Courier New", monospace;
   font-size: 12px;
-  color: #191c1e;
+  color: var(--color-text);
   max-width: 420px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -166,8 +166,8 @@
   display: inline-block;
   margin-top: 2px;
   font-size: 11px;
-  color: #855300;
-  background: rgba(133, 83, 0, 0.08);
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
   padding: 1px 6px;
   border-radius: 3px;
   font-family: inherit;
@@ -194,13 +194,14 @@
   bottom: 0;
   width: 560px;
   max-width: 90vw;
-  background: #fff;
-  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.12);
+  background: var(--color-surface);
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
   z-index: 100;
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 1px solid var(--color-border);
 }
 
 .qan-drawer--open {
@@ -212,21 +213,21 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #e0e3e5;
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
 .qan-drawer-title {
   font-size: 16px;
   font-weight: 600;
-  color: #191c1e;
+  color: var(--color-text);
 }
 
 .qan-drawer-close {
   background: none;
   border: none;
   cursor: pointer;
-  color: #534434;
+  color: var(--color-text-muted);
   padding: 4px;
   border-radius: 4px;
   display: flex;
@@ -234,7 +235,7 @@
   transition: background 0.15s;
 }
 
-.qan-drawer-close:hover { background: #eceef0; }
+.qan-drawer-close:hover { background: var(--color-surface-subtle); }
 
 .qan-drawer-body {
   flex: 1;
@@ -250,7 +251,7 @@
 .qan-detail-label {
   font-size: 12px;
   font-weight: 600;
-  color: #534434;
+  color: var(--color-text-muted);
   margin-bottom: 6px;
   letter-spacing: 0.02em;
 }
@@ -277,8 +278,8 @@
 }
 
 .qan-metric {
-  background: #f8f9fa;
-  border: 1px solid #e0e3e5;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 10px 12px;
   display: flex;
@@ -288,14 +289,14 @@
 
 .qan-metric-label {
   font-size: 11px;
-  color: #534434;
+  color: var(--color-text-muted);
   font-weight: 500;
 }
 
 .qan-metric-value {
   font-size: 17px;
   font-weight: 700;
-  color: #191c1e;
+  color: var(--color-text);
 }
 
 /* 趋势图 */
@@ -304,8 +305,8 @@
   align-items: flex-end;
   gap: 4px;
   height: 120px;
-  background: #f8f9fa;
-  border: 1px solid #e0e3e5;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 12px 8px 24px;
 }
@@ -323,7 +324,7 @@
 .qan-trend-bar {
   width: 100%;
   max-width: 32px;
-  background: linear-gradient(to top, #855300, #f59e0b);
+  background: linear-gradient(to top, var(--color-accent), var(--color-warning));
   border-radius: 3px 3px 0 0;
   transition: height 0.3s;
   min-height: 2px;
@@ -333,7 +334,7 @@
 
 .qan-trend-label {
   font-size: 9px;
-  color: #534434;
+  color: var(--color-text-muted);
   white-space: nowrap;
 }
 

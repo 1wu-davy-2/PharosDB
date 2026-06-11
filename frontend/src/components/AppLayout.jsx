@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import i18n from "../i18n";
 import "./AppLayout.css";
 
 const Icon = ({ name, size = 20 }) => (
@@ -9,10 +12,12 @@ const Icon = ({ name, size = 20 }) => (
 
 /* ═══ 侧边栏 ═══ */
 function Sidebar({ collapsed, onToggle }) {
+  const { t } = useTranslation();
   const navItems = [
-    { icon: "dashboard", label: "监控总览", to: "/" },
-    { icon: "query_stats", label: "SQL 分析", to: "/qan" },
-    { icon: "storage", label: "实例管理", to: "/instances" },
+    { icon: "dashboard", label: t("nav.dashboard"), to: "/" },
+    { icon: "query_stats", label: t("nav.qan"), to: "/qan" },
+    { icon: "storage", label: t("nav.instances"), to: "/instances" },
+    { icon: "device_hub", label: t("nav.locks"), to: "/locks" },
   ];
 
   return (
@@ -51,13 +56,21 @@ function Sidebar({ collapsed, onToggle }) {
 
 /* ═══ 顶部栏 ═══ */
 function Topbar({ title, onMenuClick }) {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
     navigate("/login", { replace: true });
+  };
+
+  const toggleLang = () => {
+    const next = i18n.language === "zh" ? "en" : "zh";
+    i18n.changeLanguage(next);
+    localStorage.setItem("pharos_lang", next);
   };
 
   return (
@@ -69,6 +82,27 @@ function Topbar({ title, onMenuClick }) {
         <h1 className="topbar-title">{title}</h1>
       </div>
       <div className="topbar-right">
+        {/* 语言切换 */}
+        <button
+          className="topbar-icon-btn"
+          onClick={toggleLang}
+          title={i18n.language === "zh" ? "Switch to English" : "切换为中文"}
+        >
+          <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: 0 }}>
+            {i18n.language === "zh" ? "EN" : "中"}
+          </span>
+        </button>
+
+        {/* 主题切换 */}
+        <button
+          className="topbar-icon-btn"
+          onClick={toggleTheme}
+          title={theme === "light" ? "切换暗色" : "Switch to light"}
+        >
+          <Icon name={theme === "light" ? "dark_mode" : "light_mode"} size={20} />
+        </button>
+
+        {/* 用户菜单 */}
         <div className="topbar-user-wrap">
           <button className="topbar-user" onClick={() => setMenuOpen(!menuOpen)}>
             <div className="topbar-avatar">{user?.username?.[0]?.toUpperCase() || "?"}</div>
@@ -78,7 +112,7 @@ function Topbar({ title, onMenuClick }) {
           {menuOpen && (
             <div className="topbar-dropdown">
               <button className="topbar-dropdown-item" onClick={handleLogout}>
-                <Icon name="logout" size={16} /> 退出登录
+                <Icon name="logout" size={16} /> {t("common.logout")}
               </button>
             </div>
           )}

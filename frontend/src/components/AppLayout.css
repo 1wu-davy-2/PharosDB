@@ -1,5 +1,4 @@
-/* ── App Layout — 复用 Dashboard 的 sidebar/topbar 样式 ── */
-/* 只包含布局特有样式，通用样式在 DashboardPage.css 中 */
+/* ── App Layout ── */
 
 /* ── 通用页面工具栏 ── */
 .page-toolbar {
@@ -30,25 +29,25 @@
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 500;
-  border: 1px solid #e0e3e5;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: #fff;
-  color: #191c1e;
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
   font-family: inherit;
 }
 
-.btn:hover { background: #f2f4f6; }
+.btn:hover { background: var(--color-surface-hover); }
 
 .btn-primary {
-  background: #855300;
+  background: var(--color-accent);
   color: #fff;
-  border-color: #855300;
+  border-color: var(--color-accent);
 }
 
-.btn-primary:hover { background: #6b4400; }
+.btn-primary:hover { background: var(--color-accent-hover); border-color: var(--color-accent-hover); }
 
 .btn-success {
   background: #10b981;
@@ -56,15 +55,15 @@
   border-color: #10b981;
 }
 
-.btn-success:hover { background: #059669; }
+.btn-success:hover { background: #059669; border-color: #059669; }
 
 .btn-danger {
-  background: #ba1a1a;
+  background: var(--color-error-alt);
   color: #fff;
-  border-color: #ba1a1a;
+  border-color: var(--color-error-alt);
 }
 
-.btn-danger:hover { background: #991414; }
+.btn-danger:hover { background: #991414; border-color: #991414; }
 
 .btn-sm {
   padding: 4px 10px;
@@ -75,12 +74,12 @@
   padding: 6px;
   border: none;
   background: transparent;
-  color: #534434;
+  color: var(--color-text-muted);
   border-radius: 4px;
   cursor: pointer;
 }
 
-.btn-icon:hover { background: #eceef0; }
+.btn-icon:hover { background: var(--color-surface-subtle); }
 
 /* ── 标签 ── */
 .badge {
@@ -97,7 +96,12 @@
 .badge-danger  { background: #fee2e2; color: #991b1b; }
 .badge-warning { background: #fef3c7; color: #92400e; }
 .badge-info    { background: #dbeafe; color: #1e40af; }
-.badge-muted   { background: #f1f5f9; color: #64748b; }
+.badge-muted   { background: var(--color-surface-subtle); color: var(--color-text-dim); }
+
+[data-theme="dark"] .badge-success { background: rgba(16,185,129,0.15); color: #34d399; }
+[data-theme="dark"] .badge-danger  { background: rgba(220,38,38,0.15);  color: #f87171; }
+[data-theme="dark"] .badge-warning { background: rgba(245,158,11,0.15); color: #fbbf24; }
+[data-theme="dark"] .badge-info    { background: rgba(59,130,246,0.15); color: #93c5fd; }
 
 /* ── 空状态 ── */
 .empty-state {
@@ -106,7 +110,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: #534434;
+  color: var(--color-text-muted);
   text-align: center;
   gap: 12px;
 }
@@ -119,12 +123,12 @@
 .empty-state-title {
   font-size: 16px;
   font-weight: 600;
-  color: #191c1e;
+  color: var(--color-text);
 }
 
 .empty-state-desc {
   font-size: 13px;
-  color: #534434;
+  color: var(--color-text-muted);
   max-width: 360px;
 }
 
@@ -141,13 +145,14 @@
 }
 
 .modal {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 10px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-xl);
   width: 100%;
   max-width: 520px;
   max-height: 80vh;
   overflow-y: auto;
+  border: 1px solid var(--color-border);
 }
 
 .modal-header {
@@ -155,24 +160,25 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #e0e3e5;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modal-title {
   font-size: 16px;
   font-weight: 600;
+  color: var(--color-text);
 }
 
 .modal-close {
   background: none;
   border: none;
   cursor: pointer;
-  color: #534434;
+  color: var(--color-text-muted);
   padding: 4px;
   border-radius: 4px;
 }
 
-.modal-close:hover { background: #eceef0; }
+.modal-close:hover { background: var(--color-surface-subtle); }
 
 .modal-body {
   padding: 20px;
@@ -183,7 +189,7 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 1px solid #e0e3e5;
+  border-top: 1px solid var(--color-border);
 }
 
 /* ── 表单 ── */
@@ -195,7 +201,7 @@
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: #534434;
+  color: var(--color-text-muted);
   margin-bottom: 4px;
   letter-spacing: 0.02em;
 }
@@ -205,18 +211,19 @@
   width: 100%;
   padding: 8px 12px;
   font-size: 13px;
-  border: 1px solid #e0e3e5;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   font-family: inherit;
-  background: #fff;
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .form-input:focus,
 .form-select:focus {
-  border-color: #855300;
-  box-shadow: 0 0 0 3px rgba(133, 83, 0, 0.1);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-bg);
 }
 
 .form-row {
@@ -227,7 +234,7 @@
 
 .form-hint {
   font-size: 11px;
-  color: #534434;
+  color: var(--color-text-muted);
   margin-top: 3px;
 }
 
@@ -240,13 +247,13 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
   z-index: 200;
   animation: slideIn 0.3s ease-out;
 }
 
 .toast-success { background: #10b981; color: #fff; }
-.toast-error   { background: #ba1a1a; color: #fff; }
+.toast-error   { background: var(--color-error-alt); color: #fff; }
 
 @keyframes slideIn {
   from { transform: translateX(100%); opacity: 0; }
@@ -259,7 +266,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px;
-  color: #534434;
+  color: var(--color-text-muted);
   gap: 10px;
   font-size: 13px;
 }
@@ -267,8 +274,8 @@
 .mini-spinner {
   width: 18px;
   height: 18px;
-  border: 2px solid #e0e3e5;
-  border-top-color: #855300;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }

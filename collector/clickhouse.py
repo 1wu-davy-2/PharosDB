@@ -103,6 +103,17 @@ METRICS_COLUMNS = [
 ]
 
 
+LOCK_WAITS_COLUMNS = [
+    "service_name", "collected_at",
+    "waiting_trx_id", "waiting_thread_id", "waiting_query",
+    "waiting_trx_started", "waiting_age_seconds",
+    "blocking_trx_id", "blocking_thread_id", "blocking_query",
+    "lock_type", "lock_mode",
+    "lock_object_schema", "lock_object_table", "lock_index", "lock_data",
+    "is_deadlock",
+]
+
+
 class ClickHouseWriter:
     """ClickHouse 批量写入单例。"""
 
@@ -124,6 +135,28 @@ class ClickHouseWriter:
                 database=settings.CLICKHOUSE_DATABASE,
             )
         return self._client
+
+    def execute(self, sql: str, params=None):
+        """通用查询接口，返回行列表（用于历史查询）。"""
+        client = self._get_client()
+        return client.execute(sql, params or [], with_column_types=True)
+
+    def write_lock_waits(self, rows: list[dict]) -> int:
+        """批量写入 lock_waits 表。"""
+        if not rows:
+            return 0
+        client = self._get_client()
+        columns = LOCK_WAITS_COLUMNS
+        data = [[row.get(col) for col in columns] for row in rows]
+        cols_str = ", ".join(f"`{c}`" for c in columns)
+        sql = f"INSERT INTO pharos_db.lock_waits ({cols_str}) VALUES"
+        try:
+            client.execute(sql, data)
+            logger.info(f"写入 {len(data)} 行到 ClickHouse lock_waits 表")
+            return len(data)
+        except Exception as e:
+            logger.error(f"ClickHouse lock_waits 写入失败: {e}")
+            raise
 
     def write_metrics(self, rows: list[dict]):
         """批量写入 metrics 表。"""

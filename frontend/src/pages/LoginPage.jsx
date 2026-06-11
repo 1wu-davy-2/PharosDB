@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
+import i18n from "../i18n";
 import "./LoginPage.css";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
@@ -18,25 +21,20 @@ export default function LoginPage() {
   const passwordRef = useRef(null);
   const isFocused = useRef(false);
 
-  // ── 计算光束角度：灯塔核心 → 目标元素中心 ──
   const calculateAngle = useCallback((target) => {
     const core = lanternCoreRef.current;
     if (!core || !target) return 0;
-
     const cr = core.getBoundingClientRect();
     const tr = target.getBoundingClientRect();
-
     const cx = cr.left + cr.width / 2;
     const cy = cr.top + cr.height / 2;
     const tx = tr.left + tr.width / 2;
     const ty = tr.top + tr.height / 2;
-
     let deg = Math.atan2(ty - cy, tx - cx) * (180 / Math.PI) - 90;
     if (deg < 0) deg += 360;
     return deg;
   }, []);
 
-  // ── 光束锁定到输入框 ──
   const snapBeamTo = useCallback((target) => {
     const beam = beamRef.current;
     if (!beam) return;
@@ -45,7 +43,6 @@ export default function LoginPage() {
     beam.style.transform = `rotate(${calculateAngle(target)}deg)`;
   }, [calculateAngle]);
 
-  // ── 恢复旋转 ──
   const releaseBeam = useCallback(() => {
     const beam = beamRef.current;
     if (!beam) return;
@@ -54,15 +51,13 @@ export default function LoginPage() {
       if (!isFocused.current && beamRef.current) {
         beam.classList.remove("beam--pointed");
         beam.style.transform = "";
-        // 强制 CSS 动画重启
         beam.style.animation = "none";
-        void beam.offsetHeight; // force reflow
+        void beam.offsetHeight;
         beam.style.animation = "";
       }
     }, 120);
   }, []);
 
-  // ── 窗口 resize 时重新计算 ──
   useEffect(() => {
     const onResize = () => {
       if (document.activeElement === usernameRef.current) {
@@ -86,23 +81,30 @@ export default function LoginPage() {
       const msg =
         err.response?.data?.non_field_errors?.[0] ||
         err.response?.data?.detail ||
-        "登录失败，请检查用户名和密码。";
+        t("login.error_default");
       setError(msg);
     } finally {
       setSubmitting(false);
     }
   };
 
+  const toggleLang = () => {
+    const next = i18n.language === "zh" ? "en" : "zh";
+    i18n.changeLanguage(next);
+    localStorage.setItem("pharos_lang", next);
+  };
+
   return (
     <div className="login-immersive">
-      {/* ═══ 星空背景 ═══ */}
+      {/* 语言切换按钮 */}
+      <button className="login-lang-btn" onClick={toggleLang}>
+        {i18n.language === "zh" ? "EN" : "中"}
+      </button>
+
       <div className="login-stars" />
 
-      {/* ═══ 灯塔 + 品牌 ═══ */}
       <div className="login-lighthouse-area">
-        {/* 灯塔 SVG + 发光核心（共用一个容器，光束以此为原点） */}
         <div className="lighthouse-body">
-          {/* 多层旋转光束 — 所有层从同一个原点发射 */}
           <div className="beam-stage" ref={beamRef}>
             <div className="beam-layer beam-layer--main" />
             <div className="beam-layer beam-layer--left" />
@@ -111,7 +113,6 @@ export default function LoginPage() {
             <div className="beam-layer beam-layer--glow" />
           </div>
 
-          {/* 灯塔 SVG */}
           <div className="login-lighthouse-svg">
             <svg fill="none" height="180" width="120" viewBox="0 0 120 180">
               <path d="M20 180L40 60H80L100 180H20Z" fill="#1e3a8a" stroke="#0d9488" strokeWidth="2" />
@@ -122,23 +123,20 @@ export default function LoginPage() {
             </svg>
           </div>
 
-          {/* 发光核心 — 光束原点 */}
           <div className="lantern-core" ref={lanternCoreRef} />
         </div>
 
-        {/* 品牌文字 */}
         <div className="login-brand-text">
           <h1>PharosDB</h1>
-          <p>数据库可观测性平台</p>
+          <p>{t("login.subtitle")}</p>
         </div>
       </div>
 
-      {/* ═══ 玻璃拟态登录卡片 ═══ */}
       <div className="login-glass-wrap">
         <div className="login-glass-card">
           <div className="login-glass-header">
-            <h2>欢迎回来</h2>
-            <p>登录您的账号继续使用</p>
+            <h2>{t("login.welcome")}</h2>
+            <p>{t("login.welcome_sub")}</p>
           </div>
 
           {error && (
@@ -149,16 +147,15 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="login-glass-form">
-            {/* 用户名 */}
             <div className="login-glass-field">
-              <label htmlFor="username">用户名 / USERNAME</label>
+              <label htmlFor="username">{t("login.username_label")}</label>
               <div className="input-dark-wrap">
                 <span className="material-symbols-outlined input-dark-icon">person</span>
                 <input
                   id="username"
                   ref={usernameRef}
                   type="text"
-                  placeholder="Enter your username"
+                  placeholder={t("login.username_placeholder")}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   onFocus={() => snapBeamTo(usernameRef.current)}
@@ -169,16 +166,15 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* 密码 */}
             <div className="login-glass-field">
-              <label htmlFor="password">密码 / PASSWORD</label>
+              <label htmlFor="password">{t("login.password_label")}</label>
               <div className="input-dark-wrap">
                 <span className="material-symbols-outlined input-dark-icon">lock</span>
                 <input
                   id="password"
                   ref={passwordRef}
                   type={showPwd ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder={t("login.password_placeholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => snapBeamTo(passwordRef.current)}
@@ -199,32 +195,29 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* 记住我 + 忘记密码 */}
             <div className="login-glass-options">
               <label className="login-glass-remember">
                 <input type="checkbox" />
-                <span>记住我</span>
+                <span>{t("login.remember")}</span>
               </label>
               <a href="#" onClick={(e) => e.preventDefault()} className="login-glass-forgot">
-                忘记密码?
+                {t("login.forgot")}
               </a>
             </div>
 
-            {/* 登录按钮 */}
             <button type="submit" className="login-glass-submit" disabled={submitting}>
               {submitting ? (
                 <>
-                  登录中…
+                  {t("login.submitting")}
                   <span className="material-symbols-outlined login-spinner">progress_activity</span>
                 </>
               ) : (
-                "登 录"
+                t("login.submit")
               )}
             </button>
           </form>
         </div>
 
-        {/* Footer */}
         <div className="login-glass-footer">
           © 2026 PharosDB · v0.1.0
         </div>

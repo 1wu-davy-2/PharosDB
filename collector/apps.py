@@ -34,5 +34,6 @@ class CollectorConfig(AppConfig):
         except Exception:
             return
 
-        from .scheduler import registry
+        from .scheduler import lock_registry, registry
         registry.load_from_db()
+        lock_registry.load_from_db()
