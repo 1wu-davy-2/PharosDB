@@ -1,4 +1,5 @@
 import logging
+import os
 
 from django.apps import AppConfig
 
@@ -11,24 +12,24 @@ class CollectorConfig(AppConfig):
     verbose_name = "采集器"
 
     def ready(self):
-        from django.db.models.signals import post_migrate
-        from django.dispatch import receiver
-
         from .signals import connect_signals
         connect_signals()
 
-        @receiver(post_migrate, sender=self, weak=False)
-        def on_migrate(sender, **kwargs):
-            pass  # migrate 完成后不自动启动，由进程启动时 _boot 负责
+        # Django dev server 的 StatReloader 会启动两个进程：
+        # 外层 watcher 进程设置 RUN_MAIN=true 再 spawn 实际工作进程。
+        # 只在工作进程（RUN_MAIN=true）或生产进程（无该变量）里启动调度器。
+        if os.environ.get("RUN_MAIN") == "true" or not self._is_dev_server():
+            self._boot()
 
-        self._boot()
+    def _is_dev_server(self):
+        import sys
+        return "runserver" in sys.argv
 
     def _boot(self):
         """从 DB 恢复调度器，跳过表不存在的情况（首次 migrate 前）。"""
         try:
             from django.db import connection
-            tables = connection.introspection.table_names()
-            if "collector_database_instance" not in tables:
+            if "collector_database_instance" not in connection.introspection.table_names():
                 return
         except Exception:
             return
