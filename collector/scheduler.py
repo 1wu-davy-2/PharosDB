@@ -55,11 +55,16 @@ class _InstanceScheduler:
             if self._stopped:
                 return
         try:
-            from .tasks import _do_collect
             from .models import DatabaseInstance
             instance = DatabaseInstance.objects.get(id=self.instance_id)
-            if instance.is_active:
-                _do_collect(instance, triggered_by="scheduled")
+            if not instance.is_active:
+                return
+            if instance.db_type != "mysql":
+                # 暂不支持的类型静默跳过，不写失败历史
+                logger.debug(f"[scheduler] 实例 {self.instance_id} ({instance.db_type}) 暂不支持，跳过")
+                return
+            from .tasks import _do_collect
+            _do_collect(instance, triggered_by="scheduled")
         except Exception as e:
             logger.error(f"[scheduler] 实例 {self.instance_id} 采集异常: {e}")
         finally:
