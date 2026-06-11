@@ -1,0 +1,7 @@
+/* ── InstancesPage 样式 ── */
+.action-group {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
