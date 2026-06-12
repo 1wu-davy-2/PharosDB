@@ -18,8 +18,9 @@ class TopQueriesView(APIView):
         limit = int(request.query_params.get("limit", 20))
         search = request.query_params.get("search", "")
         schema = request.query_params.get("schema", "")
+        order = request.query_params.get("order", "DESC")
 
-        queries = services.get_top_queries(service, period, sort_by, limit, search, schema)
+        queries = services.get_top_queries(service, period, sort_by, limit, search, schema, order)
         return Response({"service": service, "period": period, "queries": queries})
 
 

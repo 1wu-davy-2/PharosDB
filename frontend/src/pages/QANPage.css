@@ -65,6 +65,29 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* 排序方向按钮 */
+.qan-sort-dir-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.qan-sort-dir-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-light);
+}
+
 /* 搜索框 */
 .qan-search-wrap {
   position: relative;
@@ -136,6 +159,14 @@
   gap: 16px;
 }
 
+/* 百分比标注 */
+.stat-card-pct {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-left: 6px;
+  font-weight: 400;
+}
+
 /* 查询行 */
 .qan-row {
   cursor: pointer;
@@ -151,15 +182,45 @@
   border-left: 3px solid var(--color-accent);
 }
 
-/* 指纹 */
+/* 指纹 + CSS tooltip */
 .qan-fingerprint {
   font-family: "JetBrains Mono", "Courier New", monospace;
   font-size: 12px;
   color: var(--color-text);
   max-width: 420px;
+  position: relative;
+  cursor: pointer;
+}
+
+.qan-fingerprint-text {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.qan-fingerprint-full {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 200;
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 10px 14px;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-width: 520px;
+  min-width: 280px;
+}
+
+.qan-fingerprint:hover .qan-fingerprint-full {
+  display: block;
 }
 
 .qan-schema {
@@ -192,7 +253,7 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: 560px;
+  width: 620px;
   max-width: 90vw;
   background: var(--color-surface);
   box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
@@ -236,6 +297,39 @@
 }
 
 .qan-drawer-close:hover { background: var(--color-surface-subtle); }
+
+/* ═══ Drawer Tab Bar ══════════════════════════════ */
+.qan-drawer-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  padding: 0 20px;
+  background: var(--color-bg-subtle);
+}
+
+.qan-drawer-tab {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  margin-bottom: -1px;
+}
+
+.qan-drawer-tab:hover {
+  color: var(--color-text);
+}
+
+.qan-drawer-tab--active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
 
 .qan-drawer-body {
   flex: 1;
@@ -300,11 +394,21 @@
 }
 
 /* 趋势图 */
+.qan-trend-metric-tabs {
+  display: inline-flex;
+  gap: 2px;
+  background: var(--color-surface-subtle);
+  border-radius: 6px;
+  padding: 2px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
 .qan-trend-chart {
   display: flex;
   align-items: flex-end;
   gap: 4px;
-  height: 120px;
+  height: 140px;
   background: var(--color-bg-subtle);
   border: 1px solid var(--color-border);
   border-radius: 6px;
@@ -338,6 +442,167 @@
   white-space: nowrap;
 }
 
+/* ═══ EXPLAIN 计划树 ══════════════════════════════ */
+.qan-plan-count {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  margin-left: 6px;
+}
+
+.qan-plan-tree {
+  background: #0f1a2e;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-x: auto;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.plan-node {
+  user-select: none;
+}
+
+.plan-node--leaf {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.plan-node-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 1px 0;
+  text-align: left;
+}
+
+.plan-node-toggle:hover {
+  color: var(--color-accent);
+}
+
+.plan-node-arrow {
+  font-size: 8px;
+  color: var(--color-text-muted);
+  transition: transform 0.15s;
+  display: inline-block;
+  width: 12px;
+  flex-shrink: 0;
+}
+
+.plan-node-arrow--open {
+  transform: rotate(90deg);
+}
+
+.plan-node-key {
+  color: #93c5fd;
+  font-weight: 500;
+}
+
+.plan-node-key--array {
+  color: #f59e0b;
+}
+
+.plan-node-sep {
+  color: var(--color-text-muted);
+  margin: 0 2px;
+}
+
+.plan-node-val--bool {
+  color: #c084fc;
+}
+
+.plan-node-val--num {
+  color: #34d399;
+}
+
+.plan-node-val--str {
+  color: #fda4af;
+}
+
+.plan-node-children {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  margin-left: 6px;
+}
+
+/* ═══ 优化建议 ═════════════════════════════════════ */
+.qan-suggest-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border: 1px solid var(--color-border);
+}
+
+.qan-suggest-card--warning {
+  background: rgba(245, 158, 11, 0.06);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.qan-suggest-card--info {
+  background: rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.qan-suggest-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.qan-suggest-card--warning .qan-suggest-icon {
+  color: var(--color-warning);
+}
+
+.qan-suggest-card--info .qan-suggest-icon {
+  color: #3b82f6;
+}
+
+.qan-suggest-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qan-suggest-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 8px;
+  border-radius: 3px;
+  width: fit-content;
+  font-family: inherit;
+}
+
+.qan-suggest-card--warning .qan-suggest-badge {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-warning);
+}
+
+.qan-suggest-card--info .qan-suggest-badge {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+
+.qan-suggest-text {
+  font-size: 13px;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
 /* 响应式 */
 @media (max-width: 1024px) {
   .qan-overview-row { grid-template-columns: repeat(2, 1fr); }
@@ -351,4 +616,5 @@
   .qan-detail-grid { grid-template-columns: 1fr 1fr; }
   .qan-drawer { width: 100%; max-width: 100%; }
   .qan-search-input { min-width: 100%; }
+  .qan-fingerprint-full { max-width: calc(100vw - 40px); }
 }

@@ -15,7 +15,7 @@ def _get_client():
 
 
 def get_top_queries(service_name: str, period: str = "1h", sort_by: str = "m_query_time_sum",
-                    limit: int = 20, search: str = "", schema: str = ""):
+                    limit: int = 20, search: str = "", schema: str = "", order: str = "DESC"):
     """获取 Top N 慢查询。
 
     Args:
@@ -50,6 +50,7 @@ def get_top_queries(service_name: str, period: str = "1h", sort_by: str = "m_que
         "num_queries": "num_queries",
     }
     order_col = sort_map.get(sort_by, "total_query_time")
+    order_dir = "ASC" if order.upper() == "ASC" else "DESC"
 
     # 构建过滤条件
     params = {"service": service_name, "seconds": seconds, "limit": limit}
@@ -98,7 +99,7 @@ def get_top_queries(service_name: str, period: str = "1h", sort_by: str = "m_que
             GROUP BY queryid
         )
         {outer_where}
-        ORDER BY {order_col} DESC
+        ORDER BY {order_col} {order_dir}
         LIMIT %(limit)s
     """
 

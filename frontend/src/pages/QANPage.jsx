@@ -4,6 +4,104 @@ import api from "../services/api";
 import AppLayout from "../components/AppLayout";
 import "./QANPage.css";
 
+const DRAWER_TABS = [
+  { key: "overview", i18n: "qan.tab_overview" },
+  { key: "trend", i18n: "qan.tab_trend" },
+  { key: "plan", i18n: "qan.tab_plan" },
+  { key: "suggestions", i18n: "qan.tab_suggestions" },
+];
+
+const TREND_METRICS = [
+  { key: "num_queries", i18n: "qan.trend_num_queries" },
+  { key: "total_query_time", i18n: "qan.trend_total_time" },
+  { key: "avg_query_time", i18n: "qan.trend_avg_time" },
+  { key: "max_query_time", i18n: "qan.trend_max_time" },
+  { key: "total_rows_examined", i18n: "qan.trend_rows" },
+];
+
+/* ── EXPLAIN JSON 树节点组件 ─────────────────────── */
+function PlanNode({ label, data, depth }) {
+  const [open, setOpen] = useState(depth < 2);
+
+  if (data == null) return null;
+
+  const isArray = Array.isArray(data);
+  const isObject = data && typeof data === "object" && !isArray;
+
+  if (isObject) {
+    const entries = Object.entries(data);
+    return (
+      <div className="plan-node" style={{ marginLeft: depth * 16 }}>
+        {label && (
+          <button className="plan-node-toggle" onClick={() => setOpen(!open)}>
+            <span className={`plan-node-arrow ${open ? "plan-node-arrow--open" : ""}`}>&#9654;</span>
+            <span className="plan-node-key">{label}</span>
+          </button>
+        )}
+        {(!label || open) && (
+          <div className="plan-node-children">
+            {entries.map(([k, v]) => (
+              <PlanNode key={k} label={k} data={v} depth={depth + (label ? 1 : 0)} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (isArray) {
+    return (
+      <div className="plan-node" style={{ marginLeft: depth * 16 }}>
+        <button className="plan-node-toggle" onClick={() => setOpen(!open)}>
+          <span className={`plan-node-arrow ${open ? "plan-node-arrow--open" : ""}`}>&#9654;</span>
+          <span className="plan-node-key plan-node-key--array">{label} [{data.length}]</span>
+        </button>
+        {(!label || open) && (
+          <div className="plan-node-children">
+            {data.map((item, i) => (
+              <PlanNode key={i} label={`[${i}]`} data={item} depth={depth + (label ? 1 : 0) + 1} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 标量值
+  const cls =
+    data === true || data === false ? "plan-node-val--bool" :
+    typeof data === "number" ? "plan-node-val--num" :
+    "plan-node-val--str";
+
+  return (
+    <div className="plan-node plan-node--leaf" style={{ marginLeft: depth * 16 }}>
+      <span className="plan-node-key">{label}</span>
+      <span className="plan-node-sep"> = </span>
+      <span className={`plan-node-val ${cls}`}>{String(data)}</span>
+    </div>
+  );
+}
+
+/* ── 优化建议规则引擎 ────────────────────────────── */
+function buildSuggestions(detail, fmtNum, fmtTime, t) {
+  const items = [];
+  const checks = [
+    { cond: detail.no_index_used_count > 0,  sev: "warning", key: "qan.suggest_no_index",       count: detail.no_index_used_count },
+    { cond: detail.full_scan_count > 0,       sev: "warning", key: "qan.suggest_full_scan",       count: detail.full_scan_count },
+    { cond: detail.filesort_count > 0,        sev: "info",    key: "qan.suggest_filesort",        count: detail.filesort_count },
+    { cond: detail.total_tmp_disk_tables > 0, sev: "warning", key: "qan.suggest_tmp_disk",        count: detail.total_tmp_disk_tables },
+    { cond: detail.full_join_count > 0,       sev: "info",    key: "qan.suggest_full_join",       count: detail.full_join_count },
+    { cond: detail.no_good_index_used_count > 0, sev: "info", key: "qan.suggest_no_good_index",  count: detail.no_good_index_used_count },
+  ];
+  for (const c of checks) {
+    if (c.cond) items.push({ severity: c.sev, text: t(c.key, { count: fmtNum(c.count) }) });
+  }
+  if (detail.avg_query_time > 1) {
+    items.push({ severity: "warning", text: t("qan.suggest_high_avg_time", { time: fmtTime(detail.avg_query_time) }) });
+  }
+  return items;
+}
+
 export default function QANPage() {
   const { t } = useTranslation();
 
@@ -28,6 +126,7 @@ export default function QANPage() {
   const [selectedService, setSelectedService] = useState("");
   const [period, setPeriod] = useState("1h");
   const [sortBy, setSortBy] = useState("m_query_time_sum");
+  const [sortDir, setSortDir] = useState("DESC");
   const [limit, setLimit] = useState(20);
   const [searchText, setSearchText] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -36,9 +135,13 @@ export default function QANPage() {
   const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerTab, setDrawerTab] = useState("overview");
   const [detailQuery, setDetailQuery] = useState(null);
   const [detail, setDetail] = useState(null);
   const [trend, setTrend] = useState([]);
+  const [trendMetric, setTrendMetric] = useState("num_queries");
+  const [plans, setPlans] = useState([]);
+  const [planLoading, setPlanLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
@@ -59,6 +162,7 @@ export default function QANPage() {
       period,
       sort: sortBy,
       limit: String(limit),
+      order: sortDir,
     });
     if (searchText) params.set("search", searchText);
     if (schemaFilter) params.set("schema", schemaFilter);
@@ -73,7 +177,7 @@ export default function QANPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [selectedService, period, sortBy, limit, searchText, schemaFilter]);
+  }, [selectedService, period, sortBy, sortDir, limit, searchText, schemaFilter]);
 
   const handleSearch = useCallback(() => {
     setSearchText(searchInput);
@@ -89,8 +193,10 @@ export default function QANPage() {
   const loadDetail = async (queryid) => {
     setDetailQuery(queryid);
     setDrawerOpen(true);
+    setDrawerTab("overview");
     setDetail(null);
     setTrend([]);
+    setPlans([]);
     setDetailLoading(true);
     try {
       const [dRes, tRes] = await Promise.all([
@@ -104,9 +210,19 @@ export default function QANPage() {
     }
   };
 
+  const loadPlans = async (fingerprint) => {
+    setPlanLoading(true);
+    try {
+      const { data } = await api.get(`/qan/plans/?fingerprint=${encodeURIComponent(fingerprint)}&service=${selectedService}`);
+      setPlans(data.plans || []);
+    } catch { setPlans([]); } finally {
+      setPlanLoading(false);
+    }
+  };
+
   const closeDrawer = () => {
     setDrawerOpen(false);
-    setTimeout(() => { setDetailQuery(null); setDetail(null); }, 300);
+    setTimeout(() => { setDetailQuery(null); setDetail(null); setPlans([]); }, 300);
   };
 
   const fmtTime = (seconds) => {
@@ -122,6 +238,15 @@ export default function QANPage() {
     if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
     return String(n);
   };
+
+  const noIndexPct = overview && overview.total_queries > 0
+    ? ((overview.no_index_queries / overview.total_queries) * 100).toFixed(1)
+    : null;
+
+  const suggestions = detail ? buildSuggestions(detail, fmtNum, fmtTime, t) : [];
+  const latestPlan = plans.length > 0 ? plans[0] : null;
+  const trendData = TREND_METRICS.find((m) => m.key === trendMetric) || TREND_METRICS[1];
+  const trendMax = Math.max(...trend.map((x) => x[trendMetric] || 0), 0);
 
   return (
     <AppLayout title={t("qan.title")}>
@@ -148,9 +273,16 @@ export default function QANPage() {
 
         <div className="qan-filter-group">
           <label className="qan-filter-label">{t("qan.filter_sort")}</label>
-          <select className="form-select qan-filter-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            {SORT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
+          <div style={{ display: "flex", gap: 4 }}>
+            <select className="form-select qan-filter-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              {SORT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+            <button className="qan-sort-dir-btn" onClick={() => setSortDir((d) => d === "DESC" ? "ASC" : "DESC")} title={sortDir === "DESC" ? "↓ DESC" : "↑ ASC"}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                {sortDir === "DESC" ? "arrow_downward" : "arrow_upward"}
+              </span>
+            </button>
+          </div>
         </div>
 
         <div className="qan-filter-group">
@@ -213,7 +345,14 @@ export default function QANPage() {
           </div>
           <div className="stat-card">
             <div className="stat-card-header"><span className="stat-card-label">{t("qan.no_index_queries")}</span></div>
-            <div className="stat-card-body"><span className="stat-card-value" style={{ color: overview.no_index_queries > 0 ? "var(--color-error-alt)" : undefined }}>{fmtNum(overview.no_index_queries)}</span></div>
+            <div className="stat-card-body">
+              <span className="stat-card-value" style={{ color: overview.no_index_queries > 0 ? "var(--color-error-alt)" : undefined }}>
+                {fmtNum(overview.no_index_queries)}
+              </span>
+              {noIndexPct && (
+                <span className="stat-card-pct">{noIndexPct}%</span>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -251,8 +390,13 @@ export default function QANPage() {
                   <tr key={q.queryid} className={`qan-row ${detailQuery === q.queryid ? "qan-row--active" : ""}`} onClick={() => loadDetail(q.queryid)}>
                     <td className="text-muted">{i + 1}</td>
                     <td>
-                      <div className="qan-fingerprint" title={q.fingerprint}>
-                        {q.fingerprint?.substring(0, 80)}{q.fingerprint?.length > 80 ? "..." : ""}
+                      <div className="qan-fingerprint">
+                        <span className="qan-fingerprint-text">
+                          {q.fingerprint?.substring(0, 80)}{q.fingerprint?.length > 80 ? "..." : ""}
+                        </span>
+                        {q.fingerprint?.length > 80 && (
+                          <span className="qan-fingerprint-full">{q.fingerprint}</span>
+                        )}
                       </div>
                       {q.schema && <span className="qan-schema">{q.schema}</span>}
                     </td>
@@ -274,6 +418,7 @@ export default function QANPage() {
         )}
       </div>
 
+      {/* ═══════════════════ Drawer ═══════════════════ */}
       {drawerOpen && <div className="qan-drawer-overlay" onClick={closeDrawer} />}
       <div className={`qan-drawer ${drawerOpen ? "qan-drawer--open" : ""}`}>
         <div className="qan-drawer-header">
@@ -283,60 +428,163 @@ export default function QANPage() {
           </button>
         </div>
 
+        {/* Tab bar */}
+        <div className="qan-drawer-tabs">
+          {DRAWER_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              className={`qan-drawer-tab ${drawerTab === tab.key ? "qan-drawer-tab--active" : ""}`}
+              onClick={() => {
+                setDrawerTab(tab.key);
+                if (tab.key === "plan" && detail && plans.length === 0) loadPlans(detail.fingerprint);
+              }}
+            >
+              {t(tab.i18n)}
+            </button>
+          ))}
+        </div>
+
         <div className="qan-drawer-body">
           {detailLoading ? (
             <div className="loading-wrap"><div className="mini-spinner" /> {t("common.loading")}</div>
           ) : detail ? (
             <>
-              <div className="qan-detail-section">
-                <div className="qan-detail-label">{t("qan.detail_fingerprint")}</div>
-                <pre className="qan-sql-block">{detail.fingerprint}</pre>
-              </div>
+              {/* Tab: 概览 */}
+              {drawerTab === "overview" && (
+                <>
+                  <div className="qan-detail-section">
+                    <div className="qan-detail-label">{t("qan.detail_fingerprint")}</div>
+                    <pre className="qan-sql-block">{detail.fingerprint}</pre>
+                  </div>
 
-              {detail.example && (
-                <div className="qan-detail-section">
-                  <div className="qan-detail-label">{t("qan.detail_example")}</div>
-                  <pre className="qan-sql-block">{detail.example}</pre>
-                </div>
+                  {detail.example && (
+                    <div className="qan-detail-section">
+                      <div className="qan-detail-label">{t("qan.detail_example")}</div>
+                      <pre className="qan-sql-block">{detail.example}</pre>
+                    </div>
+                  )}
+
+                  <div className="qan-detail-grid">
+                    {[
+                      [t("qan.metric_count"), fmtNum(detail.num_queries)],
+                      [t("qan.metric_total_time"), fmtTime(detail.total_query_time)],
+                      [t("qan.metric_avg_time"), fmtTime(detail.avg_query_time)],
+                      [t("qan.metric_max_time"), fmtTime(detail.max_query_time)],
+                      [t("qan.metric_rows_sent"), fmtNum(detail.total_rows_sent)],
+                      [t("qan.metric_rows_examined"), fmtNum(detail.total_rows_examined)],
+                      [t("qan.metric_lock_time"), fmtTime(detail.total_lock_time)],
+                      [t("qan.metric_tmp_tables"), fmtNum(detail.total_tmp_tables)],
+                      [t("qan.metric_full_scan"), fmtNum(detail.full_scan_count), detail.full_scan_count > 0],
+                      [t("qan.metric_no_index"), fmtNum(detail.no_index_used_count), detail.no_index_used_count > 0],
+                      [t("qan.metric_filesort"), fmtNum(detail.filesort_count)],
+                      [t("qan.metric_bytes_sent"), fmtNum(detail.total_bytes_sent)],
+                    ].map(([label, value, warn]) => (
+                      <div key={label} className="qan-metric">
+                        <span className="qan-metric-label">{label}</span>
+                        <span className="qan-metric-value" style={{ color: warn ? "var(--color-error-alt)" : undefined }}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
 
-              <div className="qan-detail-grid">
-                {[
-                  [t("qan.metric_count"), fmtNum(detail.num_queries)],
-                  [t("qan.metric_total_time"), fmtTime(detail.total_query_time)],
-                  [t("qan.metric_avg_time"), fmtTime(detail.avg_query_time)],
-                  [t("qan.metric_max_time"), fmtTime(detail.max_query_time)],
-                  [t("qan.metric_rows_sent"), fmtNum(detail.total_rows_sent)],
-                  [t("qan.metric_rows_examined"), fmtNum(detail.total_rows_examined)],
-                  [t("qan.metric_lock_time"), fmtTime(detail.total_lock_time)],
-                  [t("qan.metric_tmp_tables"), fmtNum(detail.total_tmp_tables)],
-                  [t("qan.metric_full_scan"), fmtNum(detail.full_scan_count), detail.full_scan_count > 0],
-                  [t("qan.metric_no_index"), fmtNum(detail.no_index_used_count), detail.no_index_used_count > 0],
-                  [t("qan.metric_filesort"), fmtNum(detail.filesort_count)],
-                  [t("qan.metric_bytes_sent"), fmtNum(detail.total_bytes_sent)],
-                ].map(([label, value, warn]) => (
-                  <div key={label} className="qan-metric">
-                    <span className="qan-metric-label">{label}</span>
-                    <span className="qan-metric-value" style={{ color: warn ? "var(--color-error-alt)" : undefined }}>{value}</span>
+              {/* Tab: 趋势 */}
+              {drawerTab === "trend" && (
+                <>
+                  <div className="qan-detail-section">
+                    <div className="qan-detail-label">{t("qan.trend_metric")}</div>
+                    <div className="qan-trend-metric-tabs">
+                      {TREND_METRICS.map((m) => (
+                        <button
+                          key={m.key}
+                          className={`qan-period-tab ${trendMetric === m.key ? "qan-period-tab--active" : ""}`}
+                          onClick={() => setTrendMetric(m.key)}
+                        >
+                          {t(m.i18n)}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              {trend.length > 0 && (
+                  {trend.length > 0 ? (
+                    <div className="qan-detail-section">
+                      <div className="qan-detail-label">{t("qan.trend_title")} — {t(trendData.i18n)}</div>
+                      <div className="qan-trend-chart">
+                        {trend.map((tItem, i) => {
+                          const height = trendMax > 0 ? (tItem[trendMetric] || 0) / trendMax * 100 : 0;
+                          const tipVal = trendMetric.includes("time") ? fmtTime(tItem[trendMetric]) : fmtNum(tItem[trendMetric]);
+                          return (
+                            <div key={i} className="qan-trend-bar-wrap">
+                              <div className="qan-trend-bar" style={{ height: `${Math.max(height, 2)}%` }} title={`${t(trendData.i18n)}: ${tipVal}`} />
+                              <span className="qan-trend-label">{new Date(tItem.hour).getHours()}:00</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="empty-state" style={{ padding: 24 }}>
+                      <span className="material-symbols-outlined empty-state-icon">show_chart</span>
+                      <div className="empty-state-title">{t("qan.no_data")}</div>
+                      <div className="empty-state-desc">{t("qan.no_data_hint")}</div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Tab: 执行计划 */}
+              {drawerTab === "plan" && (
+                <>
+                  {planLoading ? (
+                    <div className="loading-wrap"><div className="mini-spinner" /> {t("common.loading")}</div>
+                  ) : latestPlan ? (
+                    <div className="qan-detail-section">
+                      <div className="qan-detail-label">
+                        {t("qan.tab_plan")}
+                        {plans.length > 1 && <span className="qan-plan-count"> ({plans.length} versions)</span>}
+                      </div>
+                      <div className="qan-plan-tree">
+                        {latestPlan.plan_json ? (
+                          <PlanNode data={latestPlan.plan_json} depth={0} />
+                        ) : (
+                          <pre className="qan-sql-block" style={{ fontSize: 11 }}>{JSON.stringify(latestPlan.plan_summary || latestPlan, null, 2)}</pre>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="empty-state" style={{ padding: 24 }}>
+                      <span className="material-symbols-outlined empty-state-icon">account_tree</span>
+                      <div className="empty-state-title">{t("qan.no_plan")}</div>
+                      <div className="empty-state-desc">{t("qan.no_plan_desc")}</div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Tab: 优化建议 */}
+              {drawerTab === "suggestions" && (
                 <div className="qan-detail-section">
-                  <div className="qan-detail-label">{t("qan.trend_title")}</div>
-                  <div className="qan-trend-chart">
-                    {trend.map((tItem, i) => {
-                      const maxTime = Math.max(...trend.map((x) => x.total_query_time));
-                      const height = maxTime > 0 ? (tItem.total_query_time / maxTime) * 100 : 0;
-                      return (
-                        <div key={i} className="qan-trend-bar-wrap">
-                          <div className="qan-trend-bar" style={{ height: `${Math.max(height, 2)}%` }} title={`${fmtTime(tItem.avg_query_time)} / ${fmtNum(tItem.num_queries)}次`} />
-                          <span className="qan-trend-label">{new Date(tItem.hour).getHours()}:00</span>
+                  {suggestions.length === 0 ? (
+                    <div className="empty-state" style={{ padding: 24 }}>
+                      <span className="material-symbols-outlined empty-state-icon" style={{ color: "var(--color-success)" }}>check_circle</span>
+                      <div className="empty-state-title">{t("qan.suggest_empty")}</div>
+                      <div className="empty-state-desc">{t("qan.suggest_empty_desc")}</div>
+                    </div>
+                  ) : (
+                    suggestions.map((s, i) => (
+                      <div key={i} className={`qan-suggest-card qan-suggest-card--${s.severity}`}>
+                        <span className="material-symbols-outlined qan-suggest-icon">
+                          {s.severity === "warning" ? "warning" : "info"}
+                        </span>
+                        <div className="qan-suggest-body">
+                          <span className="qan-suggest-badge">
+                            {s.severity === "warning" ? t("qan.severity_warning") : t("qan.severity_info")}
+                          </span>
+                          <span className="qan-suggest-text">{s.text}</span>
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </>
