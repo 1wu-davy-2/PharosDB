@@ -9,8 +9,11 @@
   overflow: hidden;
   font-family: system-ui, -apple-system, "Noto Sans SC", sans-serif;
   color: var(--color-text);
-  background: var(--color-bg-alt);
+  background: var(--dash-bg, var(--color-bg));
 }
+
+[data-theme="light"] { --dash-bg: #f1f5f9; }
+[data-theme="dark"]  { --dash-bg: #051424; }
 
 .dash-overlay {
   position: fixed;
@@ -91,8 +94,8 @@
 }
 
 .sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #d4e3ff;
+  background: var(--sidebar-hover-bg);
+  color: var(--sidebar-hover-text);
 }
 
 .sidebar-item--active {
@@ -117,14 +120,15 @@
   padding: 10px 14px;
   border: none;
   border-radius: 6px;
-  background: #f59e0b;
-  color: #613b00;
+  background: var(--color-accent);
+  color: #fff;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.15s;
   white-space: nowrap;
 }
+[data-theme="dark"] .sidebar-cta { color: #472a00; }
 
 .sidebar-cta:hover {
   opacity: 0.88;
@@ -134,7 +138,7 @@
   margin-top: 10px;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--sidebar-toggle-color);
   cursor: pointer;
   padding: 6px;
   border-radius: 6px;
@@ -145,8 +149,8 @@
 }
 
 .sidebar-toggle:hover {
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--sidebar-text);
+  background: var(--sidebar-hover-bg);
 }
 
 /* ── Topbar ── */
@@ -253,8 +257,8 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #f59e0b;
-  color: #613b00;
+  background: var(--color-accent);
+  color: #fff;
   font-weight: 700;
   font-size: 13px;
   display: flex;
@@ -262,6 +266,7 @@
   justify-content: center;
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
 }
+[data-theme="dark"] .topbar-avatar { color: #472a00; }
 
 .topbar-username {
   font-size: 13px;

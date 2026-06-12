@@ -2,15 +2,29 @@ import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
+import { resolveDbIcon, resolveDbLabel } from "../assets/DbIcons";
 import "./InstancesPage.css";
 
-function fmtDatetime(val) {
+const fmtDatetime = (val) => {
   if (!val) return "—";
   const d = new Date(val);
   const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} `
-       + `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-}
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} `
+    + `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const DB_TYPES = [
+  { value: "mysql", label: "MySQL" },
+  { value: "mariadb", label: "MariaDB" },
+  { value: "postgresql", label: "PostgreSQL" },
+  { value: "mongodb", label: "MongoDB" },
+];
+
+const ENV_OPTIONS = [
+  { value: "prod", labelKey: "instances.env_prod" },
+  { value: "staging", labelKey: "instances.env_staging" },
+  { value: "dev", labelKey: "instances.env_dev" },
+];
 
 export default function InstancesPage() {
   const { t } = useTranslation();
@@ -23,56 +37,55 @@ export default function InstancesPage() {
   const [historyData, setHistoryData] = useState({});
   const [historyLoading, setHistoryLoading] = useState(false);
   const [schedulerStatus, setSchedulerStatus] = useState({});
-  const [filterType, setFilterType]       = useState("");
-  const [filterEnv, setFilterEnv]         = useState("");
-  const [filterStatus, setFilterStatus]   = useState("");
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterEnv, setFilterEnv] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [visibleCols, setVisibleCols] = useState({
+    type: true, env: true, host: true, version: true, lastCollect: true,
+  });
+  const [colMenuOpen, setColMenuOpen] = useState(false);
+  const [errorPopoverId, setErrorPopoverId] = useState(null);
 
   const loadSchedulerStatus = useCallback(async () => {
     try {
       const { data } = await api.get("/collector/scheduler/status/");
       const map = {};
-      (data.schedulers || []).forEach((s) => { map[s.instance_id] = s; });
+      (data.collectors || []).forEach((s) => { map[s.instance_id] = s; });
       setSchedulerStatus(map);
-    } catch {}
+    } catch { /* silently ignore */ }
   }, []);
 
-  // 每 30s 刷新调度器状态
   useEffect(() => {
     loadSchedulerStatus();
     const timer = setInterval(loadSchedulerStatus, 30000);
     return () => clearInterval(timer);
   }, [loadSchedulerStatus]);
 
-  const DB_TYPES = [
-    { value: "mysql", label: "MySQL" },
-    { value: "postgresql", label: "PostgreSQL" },
-    { value: "mongodb", label: "MongoDB" },
-  ];
-
-  const ENV_OPTIONS = [
-    { value: "prod", label: t("instances.env_prod") },
-    { value: "staging", label: t("instances.env_staging") },
-    { value: "dev", label: t("instances.env_dev") },
-  ];
-
-  const load = () => {
-    setLoading(true);
-    api.get("/collector/instances/")
-      .then(({ data }) => setInstances(data.results || data))
-      .catch(() => showToast(t("instances.load_failed"), "error"))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, []);
-
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  const filteredInstances = instances.filter((i) => {
-    if (filterType   && i.db_type           !== filterType)   return false;
-    if (filterEnv    && i.environment       !== filterEnv)    return false;
+  const load = useCallback(() => {
+    setLoading(true);
+    api.get("/collector/instances/")
+      .then(({ data }) => setInstances(data.results || data))
+      .catch(() => showToast(t("instances.load_failed"), "error"))
+      .finally(() => setLoading(false));
+  }, [t]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = instances.filter((i) => {
+    const s = search.toLowerCase();
+    if (s && !i.name.toLowerCase().includes(s)
+          && !i.host.toLowerCase().includes(s)
+          && !(i.db_version || "").toLowerCase().includes(s)) return false;
+    if (filterType === "mariadb") {
+      if (!(i.db_type === "mysql" && /MariaDB/i.test(i.db_version || ""))) return false;
+    } else if (filterType && i.db_type !== filterType) return false;
+    if (filterEnv && i.environment !== filterEnv) return false;
     if (filterStatus && i.connection_status !== filterStatus) return false;
     return true;
   });
@@ -90,8 +103,8 @@ export default function InstancesPage() {
     try {
       const { data } = await api.post(`/collector/instances/${id}/test/`);
       showToast(data.message, data.success ? "success" : "error");
-    } catch (e) {
-      showToast(e.response?.data?.message || t("instances.test_failed"), "error");
+    } catch {
+      showToast(t("instances.test_failed"), "error");
     }
   };
 
@@ -101,8 +114,8 @@ export default function InstancesPage() {
       showToast(data.message, data.success ? "success" : "error");
       load();
       if (expandedHistory === id) loadHistory(id, true);
-    } catch (e) {
-      showToast(e.response?.data?.message || t("instances.collect_failed"), "error");
+    } catch {
+      showToast(t("instances.collect_failed"), "error");
     }
   };
 
@@ -111,7 +124,7 @@ export default function InstancesPage() {
     try {
       const { data } = await api.get(`/collector/instances/${id}/history/?limit=20`);
       setHistoryData((prev) => ({ ...prev, [id]: data }));
-    } catch {}
+    } catch { /* silently ignore */ }
     if (!silent) setHistoryLoading(false);
   }, []);
 
@@ -124,151 +137,289 @@ export default function InstancesPage() {
     }
   };
 
+  const hasFilters = search || filterType || filterEnv || filterStatus;
+
   return (
     <AppLayout title={t("instances.title")}>
-      {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
+      {toast && (
+        <div className={`toast toast-${toast.type}`}>{toast.msg}</div>
+      )}
 
-      <div className="card">
+      <div className="inst-page">
+        {/* ── toolbar ── */}
         <div className="inst-toolbar">
-          <div className="inst-toolbar-left">
-            <span className="inst-count">{t("instances.total", { count: filteredInstances.length })}</span>
-
-            <select className="inst-filter-select" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-              <option value="">{t("instances.col_type")}</option>
-              {DB_TYPES.map((dt) => <option key={dt.value} value={dt.value}>{dt.label}</option>)}
-            </select>
-
-            <select className="inst-filter-select" value={filterEnv} onChange={(e) => setFilterEnv(e.target.value)}>
-              <option value="">{t("instances.col_env")}</option>
-              {ENV_OPTIONS.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
-            </select>
-
-            <select className="inst-filter-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-              <option value="">{t("instances.col_connection")}</option>
-              <option value="connected">{t("instances.conn_connected")}</option>
-              <option value="disconnected">{t("instances.conn_disconnected")}</option>
-            </select>
-
-            {(filterType || filterEnv || filterStatus) && (
-              <button className="btn btn-sm" onClick={() => { setFilterType(""); setFilterEnv(""); setFilterStatus(""); }}>
-                {t("qan.search_clear")}
+          <div className="inst-search-wrap">
+            <span className="material-symbols-outlined inst-search-icon">search</span>
+            <input
+              className="inst-search"
+              placeholder={t("instances.search_placeholder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button className="inst-search-clear" onClick={() => setSearch("")}>
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
               </button>
             )}
           </div>
 
-          <div className="inst-toolbar-right">
-            <button className="btn btn-primary" onClick={() => { setEditing(null); setShowModal(true); }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
-              {t("instances.register")}
-            </button>
+          <button className="inst-query-btn" onClick={() => load()}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>search</span>
+            {t("instances.query")}
+          </button>
+
+          <div className="inst-filters">
+            <select className="inst-filter" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+              <option value="">{t("instances.filter_type")}</option>
+              {DB_TYPES.map((dt) => <option key={dt.value} value={dt.value}>{dt.label}</option>)}
+            </select>
+
+            <select className="inst-filter" value={filterEnv} onChange={(e) => setFilterEnv(e.target.value)}>
+              <option value="">{t("instances.filter_env")}</option>
+              {ENV_OPTIONS.map((e) => (
+                <option key={e.value} value={e.value}>{t(e.labelKey)}</option>
+              ))}
+            </select>
+
+            <select className="inst-filter" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+              <option value="">{t("instances.filter_status")}</option>
+              <option value="connected">{t("instances.conn_connected")}</option>
+              <option value="disconnected">{t("instances.conn_disconnected")}</option>
+            </select>
+
+            {hasFilters && (
+              <button
+                className="inst-filter-clear"
+                onClick={() => { setSearch(""); setFilterType(""); setFilterEnv(""); setFilterStatus(""); }}
+              >
+                {t("instances.filter_clear")}
+              </button>
+            )}
           </div>
+
+          <div className="inst-col-wrap">
+            <button className="inst-col-btn" onClick={() => setColMenuOpen(!colMenuOpen)}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>view_column</span>
+              {t("instances.columns")}
+            </button>
+            {colMenuOpen && (
+              <div className="inst-col-drop">
+                {Object.entries({
+                  type: t("instances.col_type"),
+                  env: t("instances.col_env"),
+                  host: t("instances.col_host"),
+                  version: t("instances.col_version"),
+                  lastCollect: t("instances.col_last_collect"),
+                }).map(([key, label]) => (
+                  <label key={key} className="inst-col-opt">
+                    <input type="checkbox" checked={visibleCols[key]}
+                      onChange={(e) => setVisibleCols((v) => ({ ...v, [key]: e.target.checked }))} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button className="inst-add-btn" onClick={() => { setEditing(null); setShowModal(true); }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+            {t("instances.register")}
+          </button>
         </div>
 
-        {loading ? (
-          <div className="loading-wrap"><div className="mini-spinner" /> {t("common.loading")}</div>
-        ) : filteredInstances.length === 0 ? (
-          <div className="empty-state">
-            <span className="material-symbols-outlined empty-state-icon">dns</span>
-            <div className="empty-state-title">{t("instances.no_instances")}</div>
-            <div className="empty-state-desc">{t("instances.no_instances_desc")}</div>
-          </div>
-        ) : (
-          <div className="table-wrap">
-            <table className="sql-table">
-              <thead>
-                <tr>
-                  <th>{t("instances.col_name")}</th>
-                  <th>{t("instances.col_type")}</th>
-                  <th>{t("instances.col_host")}</th>
-                  <th>{t("instances.col_version")}</th>
-                  <th>{t("instances.col_env")}</th>
-                  <th>{t("instances.col_cluster")}</th>
-                  <th>{t("instances.col_status")}</th>
-                  <th>{t("instances.col_last_collect")}</th>
-                  <th style={{ textAlign: "right" }}>{t("instances.col_actions")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInstances.map((inst) => (
-                  <>
-                    <tr key={inst.id}>
-                      <td style={{ fontWeight: 600 }}>{inst.name}</td>
-                      <td>
-                        <span className="badge badge-info">{inst.db_type.toUpperCase()}</span>
-                      </td>
-                      <td className="text-mono">{inst.host}:{inst.port}</td>
-                      <td className="text-mono" style={{ fontSize: 12 }}>
-                        {inst.db_version || "-"}
-                      </td>
-                      <td>
-                        <span className={`badge ${inst.environment === "prod" ? "badge-danger" : inst.environment === "staging" ? "badge-warning" : "badge-muted"}`}>
-                          {ENV_OPTIONS.find(e => e.value === inst.environment)?.label || inst.environment}
-                        </span>
-                      </td>
-                      <td>{inst.cluster || "-"}</td>
-                      <td>
-                        <div className="sched-status-cell">
-                          {inst.connection_status === "disconnected" ? (
-                            <span className="badge badge-danger" title={inst.last_error || undefined}>
-                              {t("instances.conn_disconnected")}
+        {/* ── table ── */}
+        <div className="inst-table-card">
+          {loading ? (
+            <div className="inst-loading">{t("common.loading")}</div>
+          ) : filtered.length === 0 ? (
+            <div className="inst-empty">
+              <span className="material-symbols-outlined inst-empty-icon">dns</span>
+              <div className="inst-empty-title">{t("instances.no_instances")}</div>
+              <div className="inst-empty-desc">{t("instances.no_instances_desc")}</div>
+            </div>
+          ) : (
+            <div className="inst-table-scroll">
+              <table className="inst-table">
+                <thead>
+                  <tr>
+                    <th className="inst-th-status" />
+                    <th>{t("instances.col_name")}</th>
+                    {visibleCols.type        && <th>{t("instances.col_type")}</th>}
+                    {visibleCols.env         && <th>{t("instances.col_env")}</th>}
+                    {visibleCols.host        && <th>{t("instances.col_host")}</th>}
+                    {visibleCols.version     && <th>{t("instances.col_version")}</th>}
+                    {visibleCols.lastCollect && <th>{t("instances.col_last_collect")}</th>}
+                    <th className="inst-th-actions" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((inst) => (
+                    <>
+                      <tr key={inst.id} className="inst-row">
+                        {/* Status — consistent span wrapper for all three states */}
+                        <td className="inst-td-status">
+                          <span className="inst-status-wrap">
+                            {inst.connection_status === "connected" && schedulerStatus[inst.id]?.active ? (
+                              <span className="inst-status-label inst-status--live">
+                                <span className="inst-dot inst-dot--live" />
+                                {t("instances.conn_live")}
+                              </span>
+                            ) : inst.connection_status === "connected" ? (
+                              <span className="inst-status-label inst-status--ok">
+                                <span className="inst-dot inst-dot--idle" />
+                                {t("instances.conn_connected")}
+                              </span>
+                            ) : (
+                              <span
+                                className={`inst-status-label inst-status--err ${inst.last_error ? "inst-status--clickable" : ""}`}
+                                role={inst.last_error ? "button" : undefined}
+                                tabIndex={inst.last_error ? 0 : undefined}
+                                title={inst.last_error ? t("instances.click_for_error") : undefined}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (inst.last_error) {
+                                    setErrorPopoverId(errorPopoverId === inst.id ? null : inst.id);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    if (inst.last_error) {
+                                      setErrorPopoverId(errorPopoverId === inst.id ? null : inst.id);
+                                    }
+                                  }
+                                }}
+                              >
+                                <span className="inst-dot inst-dot--dead" />
+                                {t("instances.conn_disconnected")}
+                              </span>
+                            )}
+                          </span>
+                        </td>
+
+                        {/* Name */}
+                        <td className="inst-td-name">
+                          <span className="inst-name">{inst.name}</span>
+                          {inst.cluster && <span className="inst-cluster-tag">{inst.cluster}</span>}
+                        </td>
+
+                        {/* Type */}
+                        {visibleCols.type && (
+                          <td>
+                            <span className="inst-type-badge">
+                              {(() => { const Icon = resolveDbIcon(inst.db_type, inst.db_version); return <Icon size={16} />; })()}
+                              <span className="inst-type-label">{resolveDbLabel(inst.db_type, inst.db_version)}</span>
                             </span>
-                          ) : (
-                            <span className={`badge ${inst.is_active ? "badge-success" : "badge-muted"}`}>
-                              {inst.is_active ? t("instances.status_active") : t("instances.status_inactive")}
+                          </td>
+                        )}
+
+                        {/* Environment */}
+                        {visibleCols.env && (
+                          <td>
+                            <span className={`inst-env-badge inst-env--${inst.environment}`}>
+                              {t(ENV_OPTIONS.find((e) => e.value === inst.environment)?.labelKey || "instances.env_prod")}
                             </span>
-                          )}
-                          {inst.is_active && (
-                            <span
-                              className={`sched-dot ${schedulerStatus[inst.id]?.active ? "sched-dot--running" : "sched-dot--idle"}`}
-                              title={schedulerStatus[inst.id]?.active
-                                ? `定时采集中 / 间隔 ${schedulerStatus[inst.id]?.interval}s`
-                                : "调度器未运行"}
-                            />
-                          )}
-                        </div>
-                      </td>
-                      <td className="text-muted" style={{ fontSize: 12 }}>
-                        {fmtDatetime(inst.last_collected_at)}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <div className="action-group">
-                          <button className="btn btn-sm btn-success" onClick={() => handleTest(inst.id)}>{t("instances.btn_test")}</button>
-                          <button className="btn btn-sm btn-primary" onClick={() => handleCollect(inst.id)}>{t("instances.btn_collect")}</button>
+                          </td>
+                        )}
+
+                        {/* Address */}
+                        {visibleCols.host && (
+                          <td className="inst-td-mono">{inst.host}:{inst.port}</td>
+                        )}
+
+                        {/* Version */}
+                        {visibleCols.version && (
+                          <td className="inst-td-mono inst-td-version" title={inst.db_version || undefined}>
+                          {(() => {
+                            const v = inst.db_version;
+                            if (!v) return "—";
+                            const m = v.match(/^(\d+\.\d+)/);
+                            return m ? m[1] : v.slice(0, 12);
+                          })()}
+                          </td>
+                        )}
+
+                        {/* Last collection */}
+                        {visibleCols.lastCollect && (
+                          <td className="inst-td-time">{fmtDatetime(inst.last_collected_at)}</td>
+                        )}
+
+                        {/* Actions — icon buttons */}
+                        <td className="inst-td-actions">
                           <button
-                            className={`btn btn-sm ${expandedHistory === inst.id ? "btn-active" : ""}`}
+                            className="inst-act-btn inst-act-btn--collect"
+                            title={t("instances.btn_collect")}
+                            onClick={() => handleCollect(inst.id)}
+                          >
+                            <span className="material-symbols-outlined">sync</span>
+                          </button>
+                          <button
+                            className={`inst-act-btn ${expandedHistory === inst.id ? "inst-act-btn--on" : ""}`}
+                            title={t("instances.btn_history")}
                             onClick={() => toggleHistory(inst.id)}
                           >
-                            {t("instances.btn_history")}
+                            <span className="material-symbols-outlined">schedule</span>
                           </button>
-                          <button className="btn btn-sm" onClick={() => { setEditing(inst); setShowModal(true); }}>{t("common.edit")}</button>
-                          <button className="btn btn-sm btn-danger" onClick={() => handleDelete(inst.id)}>{t("common.delete")}</button>
-                        </div>
-                      </td>
-                    </tr>
-                    {expandedHistory === inst.id && (
-                      <tr key={`${inst.id}-history`} className="history-row">
-                        <td colSpan={9} style={{ padding: 0 }}>
-                          <HistoryPanel
-                            records={historyData[inst.id]}
-                            loading={historyLoading}
-                          />
+                          <button
+                            className="inst-act-btn"
+                            title={t("common.edit")}
+                            onClick={() => { setEditing(inst); setShowModal(true); }}
+                          >
+                            <span className="material-symbols-outlined">edit</span>
+                          </button>
+                          <button
+                            className="inst-act-btn inst-act-btn--del"
+                            title={t("common.delete")}
+                            onClick={() => handleDelete(inst.id)}
+                          >
+                            <span className="material-symbols-outlined">delete</span>
+                          </button>
                         </td>
                       </tr>
-                    )}
-                    {inst.connection_status === "disconnected" && inst.last_error && (
-                      <tr key={`${inst.id}-error`} className="error-row">
-                        <td colSpan={9} className="error-row-cell">
-                          <span className="material-symbols-outlined" style={{ fontSize: 14, color: "var(--color-error)" }}>error</span>
-                          <span className="error-row-text">{inst.last_error}</span>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+
+                      {/* History expand */}
+                      {expandedHistory === inst.id && (
+                        <tr key={`${inst.id}-hist`} className="inst-expand-row">
+                          <td colSpan={2 + Object.values(visibleCols).filter(Boolean).length + 1}>
+                            <HistoryPanel records={historyData[inst.id]} loading={historyLoading} />
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Error row — collapsed, click status label to expand */}
+                      {inst.connection_status === "disconnected" && inst.last_error && errorPopoverId === inst.id && (
+                        <tr key={`${inst.id}-err`} className="inst-err-row">
+                          <td colSpan={2 + Object.values(visibleCols).filter(Boolean).length + 1}>
+                            <div className="inst-err-popover">
+                              <div className="inst-err-popover-head">
+                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>error</span>
+                                <span className="inst-err-popover-title">{t("instances.err_detail")}</span>
+                                <button
+                                  className="inst-err-copy-btn"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(inst.last_error);
+                                    showToast(t("instances.err_copied"), "success");
+                                  }}
+                                >
+                                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>content_copy</span>
+                                  {t("instances.err_copy")}
+                                </button>
+                                <button className="inst-err-close-btn" onClick={() => setErrorPopoverId(null)}>
+                                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+                                </button>
+                              </div>
+                              <pre className="inst-err-body">{inst.last_error}</pre>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
 
       {showModal && (
@@ -286,51 +437,51 @@ export default function InstancesPage() {
   );
 }
 
-/* ═══ 采集历史面板 ═══ */
+/* ═══ History Panel ═══ */
 function HistoryPanel({ records, loading }) {
   const { t } = useTranslation();
   if (loading) {
-    return <div className="history-panel"><div className="loading-wrap"><div className="mini-spinner" /> {t("common.loading")}</div></div>;
+    return <div className="inst-hist-panel"><div className="inst-loading">{t("common.loading")}</div></div>;
   }
   if (!records) return null;
-  if (records.length === 0) {
-    return <div className="history-panel history-empty">{t("instances.no_history")}</div>;
+  if (!records.length) {
+    return <div className="inst-hist-panel inst-hist-empty">{t("instances.no_history")}</div>;
   }
-
   return (
-    <div className="history-panel">
-      <table className="history-table">
+    <div className="inst-hist-panel">
+      <div className="inst-hist-head">
+        {t("instances.btn_history")} &middot; {records.length} records
+      </div>
+      <table className="inst-hist-table">
         <thead>
           <tr>
             <th>{t("history.col_start")}</th>
             <th>{t("history.col_trigger")}</th>
             <th>{t("history.col_status")}</th>
-            <th className="text-right">{t("history.col_duration")}</th>
-            <th className="text-right">{t("history.col_queries")}</th>
-            <th className="text-right">{t("history.col_rows")}</th>
+            <th className="inst-th-r">{t("history.col_duration")}</th>
+            <th className="inst-th-r">{t("history.col_queries")}</th>
+            <th className="inst-th-r">{t("history.col_rows")}</th>
             <th>{t("history.col_error")}</th>
           </tr>
         </thead>
         <tbody>
           {records.map((r) => (
             <tr key={r.id}>
-              <td className="text-mono" style={{ fontSize: 12 }}>{fmtDatetime(r.started_at)}</td>
+              <td className="inst-td-mono inst-td-sm">{fmtDatetime(r.started_at)}</td>
               <td>
-                <span className={`badge ${r.triggered_by === "manual" ? "badge-warning" : "badge-muted"}`}>
+                <span className={`inst-chp ${r.triggered_by === "manual" ? "inst-chp--manual" : "inst-chp--sched"}`}>
                   {r.triggered_by === "manual" ? t("history.trigger_manual") : t("history.trigger_scheduled")}
                 </span>
               </td>
               <td>
-                <span className={`badge ${r.status === "success" ? "badge-success" : r.status === "partial" ? "badge-warning" : "badge-danger"}`}>
+                <span className={`inst-chp ${r.status === "success" ? "inst-chp--ok" : r.status === "partial" ? "inst-chp--warn" : "inst-chp--err"}`}>
                   {r.status === "success" ? t("history.status_success") : r.status === "partial" ? t("history.status_partial") : t("history.status_failed")}
                 </span>
               </td>
-              <td className="text-right" style={{ fontSize: 12 }}>
-                {r.duration_ms != null ? `${r.duration_ms} ms` : "—"}
-              </td>
-              <td className="text-right">{r.queries_collected}</td>
-              <td className="text-right">{r.rows_written}</td>
-              <td style={{ fontSize: 11, color: "var(--color-error-alt)", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <td className="inst-td-r">{r.duration_ms != null ? `${r.duration_ms}ms` : "—"}</td>
+              <td className="inst-td-r">{r.queries_collected}</td>
+              <td className="inst-td-r">{r.rows_written}</td>
+              <td className="inst-td-err" title={r.error_message || undefined}>
                 {r.error_message || "—"}
               </td>
             </tr>
@@ -341,19 +492,9 @@ function HistoryPanel({ records, loading }) {
   );
 }
 
-/* ═══ 实例编辑模态框 ═══ */
+/* ═══ Instance Modal ═══ */
 function InstanceModal({ instance, onClose, onSaved }) {
   const { t } = useTranslation();
-  const DB_TYPES = [
-    { value: "mysql", label: "MySQL" },
-    { value: "postgresql", label: "PostgreSQL" },
-    { value: "mongodb", label: "MongoDB" },
-  ];
-  const ENV_OPTIONS = [
-    { value: "prod", label: t("instances.env_prod") },
-    { value: "staging", label: t("instances.env_staging") },
-    { value: "dev", label: t("instances.env_dev") },
-  ];
 
   const [form, setForm] = useState({
     name: instance?.name || "",
@@ -372,25 +513,20 @@ function InstanceModal({ instance, onClose, onSaved }) {
   const [testResult, setTestResult] = useState(null);
   const [testing, setTesting] = useState(false);
 
-  const handleChange = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+  const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
   const handleTestConfig = async () => {
     setTesting(true);
     setTestResult(null);
     try {
       const { data } = await api.post("/collector/instances/test-config/", {
-        host: form.host,
-        port: form.port,
-        username: form.username,
-        password: form.password,
+        host: form.host, port: form.port,
+        username: form.username, password: form.password,
         db_type: form.db_type,
       });
       setTestResult(data);
     } catch (e) {
-      setTestResult({
-        success: false,
-        message: e.response?.data?.message || "请求失败",
-      });
+      setTestResult({ success: false, message: e.response?.data?.message || "Request failed" });
     } finally {
       setTesting(false);
     }
@@ -402,6 +538,7 @@ function InstanceModal({ instance, onClose, onSaved }) {
     setError("");
     try {
       const payload = { ...form };
+      if (payload.db_type === "mariadb") payload.db_type = "mysql";
       if (instance && !payload.password) delete payload.password;
       if (instance) {
         await api.put(`/collector/instances/${instance.id}/`, payload);
@@ -418,96 +555,105 @@ function InstanceModal({ instance, onClose, onSaved }) {
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <span className="modal-title">{instance ? t("instances.modal_edit") : t("instances.modal_create")}</span>
-          <button className="modal-close" onClick={onClose}>
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
+    <div className="inst-modal-backdrop" onClick={onClose}>
+      <div className="inst-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="inst-modal-head">
+          <span className="inst-modal-title">
+            {instance ? t("instances.modal_edit") : t("instances.modal_create")}
+          </span>
+          <button className="inst-modal-x" onClick={onClose}>
+            <span className="material-symbols-outlined">close</span>
           </button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="modal-body">
-            {error && <div className="alert alert-error">{error}</div>}
+          <div className="inst-modal-body">
+            {error && <div className="inst-modal-err">{error}</div>}
 
-            <div className="form-group">
-              <label className="form-label">{t("instances.field_name")}</label>
-              <input className="form-input" value={form.name} onChange={(e) => handleChange("name", e.target.value)} required placeholder="db-prod-01" />
+            <div className="inst-form-g">
+              <label className="inst-form-lbl">{t("instances.field_name")}</label>
+              <input className="inst-form-in" value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="db-prod-01" />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">{t("instances.field_db_type")}</label>
-                <select className="form-select" value={form.db_type} onChange={(e) => handleChange("db_type", e.target.value)}>
-                  {DB_TYPES.map((t2) => <option key={t2.value} value={t2.value}>{t2.label}</option>)}
+            <div className="inst-form-r">
+              <div className="inst-form-g">
+                <label className="inst-form-lbl">{t("instances.field_db_type")}</label>
+                <select className="inst-form-sel" value={form.db_type} onChange={(e) => set("db_type", e.target.value)}>
+                  {DB_TYPES.map((dt) => <option key={dt.value} value={dt.value}>{dt.label}</option>)}
                 </select>
               </div>
-              <div className="form-group">
-                <label className="form-label">{t("instances.field_env")}</label>
-                <select className="form-select" value={form.environment} onChange={(e) => handleChange("environment", e.target.value)}>
-                  {ENV_OPTIONS.map((t2) => <option key={t2.value} value={t2.value}>{t2.label}</option>)}
+              <div className="inst-form-g">
+                <label className="inst-form-lbl">{t("instances.field_env")}</label>
+                <select className="inst-form-sel" value={form.environment} onChange={(e) => set("environment", e.target.value)}>
+                  {ENV_OPTIONS.map((e2) => <option key={e2.value} value={e2.value}>{t(e2.labelKey)}</option>)}
                 </select>
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">{t("instances.field_host")}</label>
-                <input className="form-input" value={form.host} onChange={(e) => handleChange("host", e.target.value)} required placeholder="192.168.1.100" />
+            <div className="inst-form-r">
+              <div className="inst-form-g">
+                <label className="inst-form-lbl">{t("instances.field_host")}</label>
+                <input className="inst-form-in" value={form.host} onChange={(e) => set("host", e.target.value)} required placeholder="192.168.1.100" />
               </div>
-              <div className="form-group">
-                <label className="form-label">{t("instances.field_port")}</label>
-                <input className="form-input" type="number" value={form.port} onChange={(e) => handleChange("port", parseInt(e.target.value))} required />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">{t("instances.field_username")}</label>
-                <input className="form-input" value={form.username} onChange={(e) => handleChange("username", e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label className="form-label">{t("instances.field_password")}</label>
-                <input className="form-input" type="password" value={form.password} onChange={(e) => handleChange("password", e.target.value)} placeholder={instance ? t("instances.pwd_placeholder") : ""} />
+              <div className="inst-form-g">
+                <label className="inst-form-lbl">{t("instances.field_port")}</label>
+                <input className="inst-form-in" type="number" value={form.port} onChange={(e) => set("port", parseInt(e.target.value))} required />
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">{t("instances.field_cluster")}</label>
-                <input className="form-input" value={form.cluster} onChange={(e) => handleChange("cluster", e.target.value)} placeholder={t("instances.cluster_optional")} />
+            <div className="inst-form-r">
+              <div className="inst-form-g">
+                <label className="inst-form-lbl">{t("instances.field_username")}</label>
+                <input className="inst-form-in" value={form.username} onChange={(e) => set("username", e.target.value)} required />
               </div>
-              <div className="form-group">
-                <label className="form-label">{t("instances.field_interval")}</label>
-                <input className="form-input" type="number" value={form.collect_interval} onChange={(e) => handleChange("collect_interval", parseInt(e.target.value))} />
+              <div className="inst-form-g">
+                <label className="inst-form-lbl">{t("instances.field_password")}</label>
+                <input className="inst-form-in" type="password" value={form.password}
+                  onChange={(e) => set("password", e.target.value)}
+                  placeholder={instance ? t("instances.pwd_placeholder") : ""} />
               </div>
             </div>
 
-            <div className="form-group" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <input type="checkbox" checked={form.is_active} onChange={(e) => handleChange("is_active", e.target.checked)} id="active-check" />
-              <label htmlFor="active-check" style={{ fontSize: 13, cursor: "pointer", color: "var(--color-text)" }}>{t("instances.field_active")}</label>
+            <div className="inst-form-r">
+              <div className="inst-form-g">
+                <label className="inst-form-lbl">{t("instances.field_cluster")}</label>
+                <input className="inst-form-in" value={form.cluster}
+                  onChange={(e) => set("cluster", e.target.value)}
+                  placeholder={t("instances.cluster_optional")} />
+              </div>
+              <div className="inst-form-g">
+                <label className="inst-form-lbl">{t("instances.field_interval")}</label>
+                <input className="inst-form-in" type="number" value={form.collect_interval}
+                  onChange={(e) => set("collect_interval", parseInt(e.target.value))} />
+              </div>
             </div>
+
+            <label className="inst-form-check">
+              <input type="checkbox" checked={form.is_active}
+                onChange={(e) => set("is_active", e.target.checked)} />
+              <span>{t("instances.field_active")}</span>
+            </label>
 
             {testResult && (
-              <div className={`test-result-banner ${testResult.success ? "test-result-ok" : "test-result-fail"}`}>
+              <div className={`inst-test-badge ${testResult.success ? "inst-test-ok" : "inst-test-fail"}`}>
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                   {testResult.success ? "check_circle" : "error"}
                 </span>
-                <span>{testResult.message}</span>
+                {testResult.message}
                 {testResult.version && (
-                  <span className="test-result-version">{testResult.version}</span>
+                  <span className="inst-test-ver">{testResult.version}</span>
                 )}
               </div>
             )}
           </div>
 
-          <div className="modal-footer">
-            <button type="button" className="btn" onClick={onClose}>{t("common.cancel")}</button>
-            <button type="button" className="btn btn-success" disabled={testing || !form.host || (!instance && !form.password)}
+          <div className="inst-modal-foot">
+            <button type="button" className="inst-btn-ghost" onClick={onClose}>{t("common.cancel")}</button>
+            <button type="button" className="inst-btn-ghost"
+              disabled={testing || !form.host || (!instance && !form.password)}
               onClick={handleTestConfig}>
               {testing ? t("common.loading") : t("instances.btn_test")}
             </button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
+            <button type="submit" className="inst-btn-primary" disabled={saving}>
               {saving ? t("common.saving") : t("common.save")}
             </button>
           </div>
