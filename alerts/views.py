@@ -1,4 +1,4 @@
-from django.db.models import Count
+from django.db.models import Case, Count, Q, When
 from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -9,8 +9,20 @@ from .serializers import AlertEventSerializer, AlertRuleSerializer
 
 
 class AlertRuleViewSet(ModelViewSet):
-    queryset         = AlertRule.objects.select_related("instance").order_by("-created_at")
     serializer_class = AlertRuleSerializer
+
+    def get_queryset(self):
+        return (
+            AlertRule.objects
+            .select_related("instance")
+            .annotate(
+                firing_count=Count(
+                    "events",
+                    filter=Q(events__status="firing"),
+                )
+            )
+            .order_by("-created_at")
+        )
 
     @action(detail=True, methods=["post"], url_path="test")
     def test_evaluate(self, request, pk=None):

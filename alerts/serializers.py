@@ -7,7 +7,7 @@ class AlertRuleSerializer(serializers.ModelSerializer):
     rule_type_display = serializers.CharField(source="get_rule_type_display", read_only=True)
     severity_display  = serializers.CharField(source="get_severity_display",  read_only=True)
     instance_name     = serializers.SerializerMethodField()
-    firing_count      = serializers.SerializerMethodField()
+    firing_count      = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model  = AlertRule
@@ -16,9 +16,6 @@ class AlertRuleSerializer(serializers.ModelSerializer):
 
     def get_instance_name(self, obj):
         return obj.instance.name if obj.instance_id else None
-
-    def get_firing_count(self, obj):
-        return obj.events.filter(status="firing").count()
 
     def validate(self, attrs):
         if attrs.get("rule_type") == "custom_sql" and not attrs.get("custom_sql", "").strip():
