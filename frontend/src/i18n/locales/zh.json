@@ -14,7 +14,8 @@
     "dashboard": "监控总览",
     "qan": "SQL 分析",
     "instances": "实例管理",
-    "locks": "锁分析"
+    "locks": "锁分析",
+    "alerts": "告警中心"
   },
   "login": {
     "subtitle": "数据库可观测性平台",

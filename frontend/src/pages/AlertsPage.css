@@ -1,0 +1,96 @@
+/* ── Alert Center ── */
+
+/* 汇总行 */
+.alert-summary-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 900px) {
+  .alert-summary-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+.alert-summary-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alert-summary-total   { border-left: 3px solid var(--color-accent); }
+.alert-summary-warning { border-left: 3px solid #f59e0b; }
+.alert-summary-critical{ border-left: 3px solid #ba1a1a; }
+
+.alert-summary-num {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-text);
+}
+
+.alert-summary-total   .alert-summary-num { color: var(--color-accent); }
+.alert-summary-warning .alert-summary-num { color: #f59e0b; }
+.alert-summary-critical .alert-summary-num{ color: #ba1a1a; }
+
+.alert-summary-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+/* Tab 栏 */
+.alert-tabs {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  min-height: 48px;
+  padding: 0 4px;
+  gap: 2px;
+}
+
+.alert-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 48px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.alert-tab:hover {
+  color: var(--color-text);
+}
+
+.alert-tab--active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+/* 红点 badge */
+.alert-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #ba1a1a;
+  color: #fff;
+  line-height: 1;
+}

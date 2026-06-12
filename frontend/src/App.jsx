@@ -7,6 +7,7 @@ import DashboardPage from "./pages/DashboardPage";
 import InstancesPage from "./pages/InstancesPage";
 import QANPage from "./pages/QANPage";
 import LockPage from "./pages/LockPage";
+import AlertsPage from "./pages/AlertsPage";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/instances" element={<ProtectedRoute><InstancesPage /></ProtectedRoute>} />
           <Route path="/qan" element={<ProtectedRoute><QANPage /></ProtectedRoute>} />
           <Route path="/locks" element={<ProtectedRoute><LockPage /></ProtectedRoute>} />
+          <Route path="/alerts" element={<ProtectedRoute><AlertsPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

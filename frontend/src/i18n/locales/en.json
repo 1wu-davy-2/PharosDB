@@ -14,7 +14,8 @@
     "dashboard": "Dashboard",
     "qan": "SQL Analysis",
     "instances": "Instances",
-    "locks": "Lock Analysis"
+    "locks": "Lock Analysis",
+    "alerts": "Alerts"
   },
   "login": {
     "subtitle": "Database Observability Platform",

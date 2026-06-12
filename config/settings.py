@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "collector",
     "qan",
     "locks",
+    "alerts",
 ]
 
 MIDDLEWARE = [

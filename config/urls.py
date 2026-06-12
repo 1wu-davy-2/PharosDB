@@ -7,4 +7,5 @@ urlpatterns = [
     path("api/collector/", include("collector.urls", namespace="collector")),
     path("api/qan/", include("qan.urls", namespace="qan")),
     path("api/locks/", include("locks.urls", namespace="locks")),
+    path("api/alerts/", include("alerts.urls", namespace="alerts")),
 ]

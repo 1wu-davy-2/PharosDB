@@ -18,6 +18,7 @@ function Sidebar({ collapsed, onToggle }) {
     { icon: "query_stats", label: t("nav.qan"), to: "/qan" },
     { icon: "storage", label: t("nav.instances"), to: "/instances" },
     { icon: "device_hub", label: t("nav.locks"), to: "/locks" },
+    { icon: "notifications", label: t("nav.alerts"), to: "/alerts" },
   ];
 
   return (
