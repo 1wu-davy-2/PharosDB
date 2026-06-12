@@ -23,6 +23,13 @@ class DatabaseInstanceViewSet(viewsets.ModelViewSet):
 
     queryset = DatabaseInstance.objects.all()
     serializer_class = DatabaseInstanceSerializer
+    filterset_fields = {
+        "db_type":            ["exact"],
+        "environment":        ["exact"],
+        "connection_status":  ["exact"],
+        "is_active":          ["exact"],
+    }
+    search_fields = ["name", "host", "cluster"]
 
     @action(detail=True, methods=["post"], url_path="test")
     def test_connection(self, request, pk=None):
@@ -151,11 +158,45 @@ class DatabaseInstanceViewSet(viewsets.ModelViewSet):
             "message": "MongoDB 采集器尚未实现 (P5 阶段)",
         }, status=status.HTTP_501_NOT_IMPLEMENTED)
 
+    # ── 无需已有实例 ID 的连接测试（供注册/编辑模态框使用） ──
+    @action(detail=False, methods=["post"], url_path="test-config")
+    def test_config(self, request):
+        """POST /api/collector/instances/test-config/
+        接收原始连接参数，测试连接并返回版本号。不写库。"""
+        from .crypto import decrypt, encrypt
+        from .models import DatabaseInstance
+
+        host     = request.data.get("host", "")
+        port     = int(request.data.get("port", 3306))
+        username = request.data.get("username", "")
+        password = request.data.get("password", "")
+        db_type  = request.data.get("db_type", "mysql")
+
+        tmp = DatabaseInstance(
+            host=host, port=port, username=username,
+            password=encrypt(password), db_type=db_type,
+        )
+
+        if db_type == "mysql":
+            return self._test_mysql(tmp, password)
+        elif db_type == "postgresql":
+            return self._test_postgresql(tmp, password)
+        elif db_type == "mongodb":
+            return self._test_mongodb(tmp, password)
+        return Response(
+            {"success": False, "message": f"不支持的数据库类型: {db_type}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
 
 class SchedulerStatusView(APIView):
     """GET /api/collector/scheduler/status/  查看调度器运行状态。"""
 
     def get(self, request):
-        from .scheduler import registry
-        return Response({"schedulers": registry.status()})
+        from .scheduler import dead_registry, lock_registry, registry
+        return Response({
+            "collectors": registry.status(),
+            "lock_schedulers": lock_registry.status(),
+            "dead_queue": dead_registry.status(),
+        })
 

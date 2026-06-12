@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 import pymysql
 
 from ..crypto import decrypt
+from ..version_detect import parse_mysql_version
 
 logger = logging.getLogger(__name__)
 
@@ -157,20 +158,18 @@ class LockSnapshotCollector:
             cursorclass=pymysql.cursors.DictCursor,
         )
 
-    def _pick_sql(self, conn) -> str:
-        """检测版本，返回对应的采集 SQL。"""
-        with conn.cursor() as cur:
-            cur.execute("SELECT VERSION() AS v")
-            row = cur.fetchone()
-        version_str: str = row["v"]
+    def _pick_sql(self) -> str:
+        """根据实例已存储的 db_version 选择对应的采集 SQL。
 
-        is_mariadb = "MariaDB" in version_str
-        raw = version_str.split("-")[0]
-        parts = raw.split(".")
-        try:
-            major, minor = int(parts[0]), int(parts[1])
-        except (IndexError, ValueError):
-            major, minor = 5, 7
+        版本在实例注册时已写入 db_version 字段，采集时直接读取，
+        不再每次连接查询 VERSION()，省去一次额外的连接开销。
+        """
+        version_str = self.instance.db_version
+        if not version_str:
+            logger.warning(f"[LockCollector] {self.instance.name} db_version 为空，回退到 57 SQL")
+            return _SQL_57
+
+        major, minor, is_mariadb = parse_mysql_version(version_str)
 
         if is_mariadb:
             # data_lock_waits 在 MariaDB 10.6+ 才引入
@@ -190,7 +189,7 @@ class LockSnapshotCollector:
             conn.close()
 
     def _do_collect(self, conn) -> LockCollectResult:
-        sql = self._pick_sql(conn)
+        sql = self._pick_sql()
         with conn.cursor() as cur:
             cur.execute(sql)
             rows = cur.fetchall()

@@ -14,6 +14,10 @@ class DatabaseInstance(models.Model):
         ("staging", "Staging"),
         ("dev", "Development"),
     ]
+    CONNECTION_STATUS_CHOICES = [
+        ("connected", "Connected"),
+        ("disconnected", "Disconnected"),
+    ]
 
     name = models.CharField("名称", max_length=128)
     db_type = models.CharField("数据库类型", max_length=20, choices=DB_TYPE_CHOICES, default="mysql")
@@ -25,6 +29,11 @@ class DatabaseInstance(models.Model):
     cluster = models.CharField("集群", max_length=128, blank=True, default="")
     is_active = models.BooleanField("启用采集", default=True)
     collect_interval = models.PositiveIntegerField("采集间隔 (秒)", default=60)
+    db_version = models.CharField("数据库版本", max_length=64, blank=True, default="")
+    connection_status = models.CharField(
+        "连接状态", max_length=16, choices=CONNECTION_STATUS_CHOICES, default="disconnected",
+    )
+    last_error = models.TextField("最近错误", blank=True, default="")
     last_collected_at = models.DateTimeField("上次采集时间", null=True, blank=True)
     created_at = models.DateTimeField("创建时间", auto_now_add=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)

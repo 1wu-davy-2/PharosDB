@@ -6,6 +6,107 @@
   flex-wrap: wrap;
 }
 
+/* 工具栏 + 筛选 */
+.inst-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.inst-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.inst-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inst-count {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.inst-filter-select {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  outline: none;
+  min-width: 110px;
+  cursor: pointer;
+}
+
+.inst-filter-select:focus {
+  border-color: var(--color-accent);
+}
+
+/* 错误信息行 */
+.error-row td {
+  background: var(--color-error-bg);
+  border-top: none;
+}
+
+.error-row-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px !important;
+}
+
+.error-row-text {
+  font-size: 12px;
+  color: var(--color-error-alt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 700px;
+}
+
+/* 模态框内测试连接结果 */
+.test-result-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.test-result-ok {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.test-result-fail {
+  background: var(--color-error-bg);
+  color: var(--color-error-alt);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+}
+
+[data-theme="dark"] .test-result-ok   { background: #14532d; color: #86efac; border-color: #166534; }
+[data-theme="dark"] .test-result-fail { background: rgba(220,38,38,0.12); color: #fca5a5; border-color: #7f1d1d; }
+
+.test-result-version {
+  margin-left: auto;
+  font-size: 11px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  opacity: 0.8;
+}
+
 /* 历史展开行 */
 .history-row td {
   background: var(--color-bg-subtle);

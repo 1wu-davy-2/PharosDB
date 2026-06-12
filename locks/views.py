@@ -116,7 +116,7 @@ class LockTopologyView(APIView):
             collector = LockSnapshotCollector(instance)
             conn = collector._connect()
             try:
-                sql = collector._pick_sql(conn)
+                sql = collector._pick_sql()
                 with conn.cursor() as cur:
                     cur.execute(sql)
                     rows = cur.fetchall()

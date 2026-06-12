@@ -23,6 +23,9 @@ export default function InstancesPage() {
   const [historyData, setHistoryData] = useState({});
   const [historyLoading, setHistoryLoading] = useState(false);
   const [schedulerStatus, setSchedulerStatus] = useState({});
+  const [filterType, setFilterType]       = useState("");
+  const [filterEnv, setFilterEnv]         = useState("");
+  const [filterStatus, setFilterStatus]   = useState("");
 
   const loadSchedulerStatus = useCallback(async () => {
     try {
@@ -66,6 +69,13 @@ export default function InstancesPage() {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
+
+  const filteredInstances = instances.filter((i) => {
+    if (filterType   && i.db_type           !== filterType)   return false;
+    if (filterEnv    && i.environment       !== filterEnv)    return false;
+    if (filterStatus && i.connection_status !== filterStatus) return false;
+    return true;
+  });
 
   const handleDelete = async (id) => {
     if (!confirm(t("common.confirm_delete"))) return;
@@ -119,13 +129,34 @@ export default function InstancesPage() {
       {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
 
       <div className="card">
-        <div className="page-toolbar" style={{ marginBottom: 16 }}>
-          <div className="page-toolbar-left">
-            <span style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
-              {t("instances.total", { count: instances.length })}
-            </span>
+        <div className="inst-toolbar">
+          <div className="inst-toolbar-left">
+            <span className="inst-count">{t("instances.total", { count: filteredInstances.length })}</span>
+
+            <select className="inst-filter-select" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+              <option value="">{t("instances.col_type")}</option>
+              {DB_TYPES.map((dt) => <option key={dt.value} value={dt.value}>{dt.label}</option>)}
+            </select>
+
+            <select className="inst-filter-select" value={filterEnv} onChange={(e) => setFilterEnv(e.target.value)}>
+              <option value="">{t("instances.col_env")}</option>
+              {ENV_OPTIONS.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
+            </select>
+
+            <select className="inst-filter-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+              <option value="">{t("instances.col_connection")}</option>
+              <option value="connected">{t("instances.conn_connected")}</option>
+              <option value="disconnected">{t("instances.conn_disconnected")}</option>
+            </select>
+
+            {(filterType || filterEnv || filterStatus) && (
+              <button className="btn btn-sm" onClick={() => { setFilterType(""); setFilterEnv(""); setFilterStatus(""); }}>
+                {t("qan.search_clear")}
+              </button>
+            )}
           </div>
-          <div className="page-toolbar-right">
+
+          <div className="inst-toolbar-right">
             <button className="btn btn-primary" onClick={() => { setEditing(null); setShowModal(true); }}>
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
               {t("instances.register")}
@@ -135,7 +166,7 @@ export default function InstancesPage() {
 
         {loading ? (
           <div className="loading-wrap"><div className="mini-spinner" /> {t("common.loading")}</div>
-        ) : instances.length === 0 ? (
+        ) : filteredInstances.length === 0 ? (
           <div className="empty-state">
             <span className="material-symbols-outlined empty-state-icon">dns</span>
             <div className="empty-state-title">{t("instances.no_instances")}</div>
@@ -149,6 +180,7 @@ export default function InstancesPage() {
                   <th>{t("instances.col_name")}</th>
                   <th>{t("instances.col_type")}</th>
                   <th>{t("instances.col_host")}</th>
+                  <th>{t("instances.col_version")}</th>
                   <th>{t("instances.col_env")}</th>
                   <th>{t("instances.col_cluster")}</th>
                   <th>{t("instances.col_status")}</th>
@@ -157,7 +189,7 @@ export default function InstancesPage() {
                 </tr>
               </thead>
               <tbody>
-                {instances.map((inst) => (
+                {filteredInstances.map((inst) => (
                   <>
                     <tr key={inst.id}>
                       <td style={{ fontWeight: 600 }}>{inst.name}</td>
@@ -165,6 +197,9 @@ export default function InstancesPage() {
                         <span className="badge badge-info">{inst.db_type.toUpperCase()}</span>
                       </td>
                       <td className="text-mono">{inst.host}:{inst.port}</td>
+                      <td className="text-mono" style={{ fontSize: 12 }}>
+                        {inst.db_version || "-"}
+                      </td>
                       <td>
                         <span className={`badge ${inst.environment === "prod" ? "badge-danger" : inst.environment === "staging" ? "badge-warning" : "badge-muted"}`}>
                           {ENV_OPTIONS.find(e => e.value === inst.environment)?.label || inst.environment}
@@ -173,9 +208,15 @@ export default function InstancesPage() {
                       <td>{inst.cluster || "-"}</td>
                       <td>
                         <div className="sched-status-cell">
-                          <span className={`badge ${inst.is_active ? "badge-success" : "badge-muted"}`}>
-                            {inst.is_active ? t("instances.status_active") : t("instances.status_inactive")}
-                          </span>
+                          {inst.connection_status === "disconnected" ? (
+                            <span className="badge badge-danger" title={inst.last_error || undefined}>
+                              {t("instances.conn_disconnected")}
+                            </span>
+                          ) : (
+                            <span className={`badge ${inst.is_active ? "badge-success" : "badge-muted"}`}>
+                              {inst.is_active ? t("instances.status_active") : t("instances.status_inactive")}
+                            </span>
+                          )}
                           {inst.is_active && (
                             <span
                               className={`sched-dot ${schedulerStatus[inst.id]?.active ? "sched-dot--running" : "sched-dot--idle"}`}
@@ -206,11 +247,19 @@ export default function InstancesPage() {
                     </tr>
                     {expandedHistory === inst.id && (
                       <tr key={`${inst.id}-history`} className="history-row">
-                        <td colSpan={8} style={{ padding: 0 }}>
+                        <td colSpan={9} style={{ padding: 0 }}>
                           <HistoryPanel
                             records={historyData[inst.id]}
                             loading={historyLoading}
                           />
+                        </td>
+                      </tr>
+                    )}
+                    {inst.connection_status === "disconnected" && inst.last_error && (
+                      <tr key={`${inst.id}-error`} className="error-row">
+                        <td colSpan={9} className="error-row-cell">
+                          <span className="material-symbols-outlined" style={{ fontSize: 14, color: "var(--color-error)" }}>error</span>
+                          <span className="error-row-text">{inst.last_error}</span>
                         </td>
                       </tr>
                     )}
@@ -320,8 +369,32 @@ function InstanceModal({ instance, onClose, onSaved }) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [testResult, setTestResult] = useState(null);
+  const [testing, setTesting] = useState(false);
 
   const handleChange = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+
+  const handleTestConfig = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const { data } = await api.post("/collector/instances/test-config/", {
+        host: form.host,
+        port: form.port,
+        username: form.username,
+        password: form.password,
+        db_type: form.db_type,
+      });
+      setTestResult(data);
+    } catch (e) {
+      setTestResult({
+        success: false,
+        message: e.response?.data?.message || "请求失败",
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -414,10 +487,26 @@ function InstanceModal({ instance, onClose, onSaved }) {
               <input type="checkbox" checked={form.is_active} onChange={(e) => handleChange("is_active", e.target.checked)} id="active-check" />
               <label htmlFor="active-check" style={{ fontSize: 13, cursor: "pointer", color: "var(--color-text)" }}>{t("instances.field_active")}</label>
             </div>
+
+            {testResult && (
+              <div className={`test-result-banner ${testResult.success ? "test-result-ok" : "test-result-fail"}`}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                  {testResult.success ? "check_circle" : "error"}
+                </span>
+                <span>{testResult.message}</span>
+                {testResult.version && (
+                  <span className="test-result-version">{testResult.version}</span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="modal-footer">
             <button type="button" className="btn" onClick={onClose}>{t("common.cancel")}</button>
+            <button type="button" className="btn btn-success" disabled={testing || !form.host || (!instance && !form.password)}
+              onClick={handleTestConfig}>
+              {testing ? t("common.loading") : t("instances.btn_test")}
+            </button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
               {saving ? t("common.saving") : t("common.save")}
             </button>
