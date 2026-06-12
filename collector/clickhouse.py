@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 # metrics 表的列名列表 (按建表顺序)
 METRICS_COLUMNS = [
-    "queryid", "service_name", "database", "schema", "username", "client_host",
+    "queryid", "mysql_digest", "service_name", "database", "schema", "username", "client_host",
     "replication_set", "cluster", "service_type", "service_id",
     "environment", "az", "region", "node_model", "node_id", "node_name",
     "node_type", "machine_id", "container_name", "container_id",
@@ -103,6 +103,13 @@ METRICS_COLUMNS = [
 ]
 
 
+EXECUTION_PLANS_COLUMNS = [
+    "plan_id", "fingerprint", "service_name", "schema",
+    "plan_json", "plan_summary", "plan_hash", "query_example",
+    "created_at", "instance_id",
+]
+
+
 LOCK_WAITS_COLUMNS = [
     "service_name", "collected_at",
     "waiting_trx_id", "waiting_thread_id", "waiting_query",
@@ -127,19 +134,33 @@ class ClickHouseWriter:
 
     def _get_client(self):
         if self._client is None:
-            self._client = Client(
-                host=settings.CLICKHOUSE_HOST,
-                port=settings.CLICKHOUSE_PORT,
-                user=settings.CLICKHOUSE_USER,
-                password=settings.CLICKHOUSE_PASSWORD,
-                database=settings.CLICKHOUSE_DATABASE,
-            )
+            self._client = self._new_client()
         return self._client
 
-    def execute(self, sql: str, params=None):
-        """通用查询接口，返回行列表（用于历史查询）。"""
+    def _new_client(self):
+        return Client(
+            host=settings.CLICKHOUSE_HOST,
+            port=settings.CLICKHOUSE_PORT,
+            user=settings.CLICKHOUSE_USER,
+            password=settings.CLICKHOUSE_PASSWORD,
+            database=settings.CLICKHOUSE_DATABASE,
+            connect_timeout=5,
+            send_receive_timeout=30,
+        )
+
+    def _reset_client(self):
+        """断开并重置客户端连接（处理连接池异常）。"""
+        try:
+            if self._client:
+                self._client.disconnect()
+        except Exception:
+            pass
+        self._client = None
+
+    def execute(self, sql: str, params=None, with_column_types=False):
+        """通用查询接口，返回行列表。"""
         client = self._get_client()
-        return client.execute(sql, params or [], with_column_types=True)
+        return client.execute(sql, params or [], with_column_types=with_column_types)
 
     def write_lock_waits(self, rows: list[dict]) -> int:
         """批量写入 lock_waits 表。"""
@@ -181,3 +202,24 @@ class ClickHouseWriter:
         except Exception as e:
             logger.error(f"ClickHouse 写入失败: {e}")
             raise
+
+    def write_execution_plans(self, rows: list[dict]) -> int:
+        """批量写入 execution_plans 表。"""
+        if not rows:
+            return 0
+        client = self._get_client()
+        columns = EXECUTION_PLANS_COLUMNS
+        data = [[row.get(col) for col in columns] for row in rows]
+        cols_str = ", ".join(f"`{c}`" for c in columns)
+        sql = f"INSERT INTO pharos_db.execution_plans ({cols_str}) VALUES"
+        try:
+            client.execute(sql, data)
+            logger.info(f"写入 {len(data)} 行到 ClickHouse execution_plans 表")
+            return len(data)
+        except Exception as e:
+            logger.error(f"ClickHouse execution_plans 写入失败: {e}")
+            raise
+
+
+def get_writer() -> ClickHouseWriter:
+    return ClickHouseWriter()

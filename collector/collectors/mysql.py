@@ -15,6 +15,7 @@ from .base import BaseCollector
 SUMMARIES_SQL = """
 SELECT
     DIGEST                                           AS queryid,
+    DIGEST                                           AS mysql_digest,
     DIGEST_TEXT                                      AS fingerprint,
     SCHEMA_NAME                                      AS `schema`,
     COUNT_STAR                                       AS cnt,
@@ -45,20 +46,82 @@ LIMIT 200
 """
 
 # 单条查询的 example SQL
+# 优先查 history_long (默认 1000 行)，普通 history 只有 10 行/线程极易命中空结果
 EXAMPLE_SQL = """
 SELECT SQL_TEXT
-FROM performance_schema.events_statements_history
+FROM performance_schema.events_statements_history_long
 WHERE DIGEST = %s AND SQL_TEXT IS NOT NULL
 LIMIT 1
 """
 
+# ── EXPLAIN 相关 ──────────────────────────────────────────────────────────────
+
+TOP_N_EXPLAIN = 5       # 每个采集周期对 top-5 慢查询执行 EXPLAIN
+EXPLAIN_TIMEOUT = 3      # EXPLAIN 最大允许秒数
+
+_CONTAINER_KEYS = frozenset({
+    "nested_loop", "ordering_operation", "grouping_operation",
+    "duplicates_removal", "windowing",
+})
+
+
+def normalize_plan_summary(plan: dict) -> str:
+    """提取 EXPLAIN JSON 的结构性摘要，剔除 cost/timing 数值浮动。
+
+    只保留每个 table 节点的 join_type/access_type、key、Extra 等结构信息，
+    以及嵌套子查询树。用于判断两次 EXPLAIN 是否有实质差异。
+    """
+
+    def _walk(node):
+        if isinstance(node, list):
+            return [_walk(item) for item in node]
+        if not isinstance(node, dict):
+            return node
+
+        if "table" in node:
+            tbl = node["table"]
+            result = {
+                "table_name": tbl.get("table_name"),
+                "access_type": tbl.get("access_type"),
+                "key":           tbl.get("key"),
+                "possible_keys": sorted(tbl.get("possible_keys", []) or []),
+                "used_columns":  sorted(tbl.get("used_columns", []) or []),
+                "Extra":        tbl.get("Extra", ""),
+                "filtered":     tbl.get("filtered"),
+            }
+            if "materialized_from_subquery" in tbl:
+                result["materialized_from_subquery"] = _walk(
+                    tbl["materialized_from_subquery"]
+                )
+            return result
+
+        result: dict = {}
+        for key in node:
+            if key in _CONTAINER_KEYS or key == "query_block":
+                result[key] = _walk(node[key])
+        return result
+
+    import json
+    return json.dumps(
+        _walk(plan.get("query_block", plan)),
+        sort_keys=True,
+        default=str,
+    )
+
 
 class MySQLCollector(BaseCollector):
-    """MySQL Agentless 采集器 — 查询 performance_schema。"""
+    """MySQL Agentless 采集器 — 查询 performance_schema。
+
+    除指标采集外，每个周期对 top-{TOP_N_EXPLAIN} 慢查询自动执行 EXPLAIN，
+    写入 ClickHouse execution_plans 表，支持执行计划历史版本对比。
+    """
 
     # 内存中保存上一次快照，用于计算 delta
     # key: (instance_id, queryid), value: dict of metric values
     _snapshots: dict = {}
+
+    # EXPLAIN 去重缓存: key="{instance_name}:{fingerprint}" → plan_hash
+    _plan_cache: dict[str, str] = {}
 
     def connect(self):
         self.conn = pymysql.connect(
@@ -121,6 +184,21 @@ class MySQLCollector(BaseCollector):
             # 构建 ClickHouse 行
             ch_row = self._build_ch_row(row, delta, example, now)
             result.append(ch_row)
+
+        # ── 对 top-N 慢查询执行 EXPLAIN ──
+        # 只对 DML 类型查询执行 EXPLAIN（SHOW/SET/其他不行）
+        top_queries = sorted(
+            result, key=lambda r: r["m_query_time_sum"], reverse=True
+        )[:TOP_N_EXPLAIN * 2]  # 多取一些，防止过滤后不足
+        explain_count = 0
+        for q in top_queries:
+            fingerprint = (q.get("fingerprint") or "").strip().upper()
+            if not fingerprint.startswith(("SELECT", "INSERT", "UPDATE", "DELETE", "REPLACE")):
+                continue
+            if self._maybe_collect_explain(q, cur):
+                explain_count += 1
+                if explain_count >= TOP_N_EXPLAIN:
+                    break
 
         cur.close()
         return result
@@ -202,6 +280,7 @@ class MySQLCollector(BaseCollector):
         return {
             # 主维度
             "queryid": raw_row["queryid"],
+            "mysql_digest": raw_row.get("mysql_digest") or raw_row.get("queryid") or "",
             "service_name": instance.name,
             "database": "",
             "schema": raw_row.get("schema") or "",
@@ -433,3 +512,153 @@ class MySQLCollector(BaseCollector):
             "m_parallel_workers_to_launch_cnt": 0, "m_parallel_workers_to_launch_sum": 0,
             "m_parallel_workers_launched_cnt": 0, "m_parallel_workers_launched_sum": 0,
         }
+
+    # ── EXPLAIN 方法 ──────────────────────────────────────────────────────
+
+    def _maybe_collect_explain(self, metrics_row, cursor) -> bool:
+        """对一条慢查询执行 EXPLAIN，有变化时写入 ClickHouse execution_plans。
+
+        Returns True if EXPLAIN was successfully executed (regardless of whether
+        it was a new plan or unchanged), False if skipped.
+        """
+        fingerprint = metrics_row.get("fingerprint", "")
+        mysql_digest = metrics_row.get("mysql_digest", "")
+        schema = metrics_row.get("schema", "")
+
+        if not mysql_digest or not fingerprint:
+            return False
+
+        import logging as _logging
+        _log = _logging.getLogger(__name__)
+
+        # 1. 获取 SQL 原文
+        # events_statements_history 容量很小（默认 10/线程），可能已被淘汰。
+        # 优先查 history_long (MySQL 5.7+ / MariaDB 10.5.2+)，其次 history，
+        # 都查不到则复用同周期已取到的 example。
+        sql_text = ""
+        for table in (
+            "performance_schema.events_statements_history_long",
+            "performance_schema.events_statements_history",
+        ):
+            try:
+                cursor.execute(
+                    "SELECT SQL_TEXT FROM {} WHERE DIGEST = %s AND SQL_TEXT IS NOT NULL LIMIT 1".format(table),
+                    (mysql_digest,),
+                )
+                row = cursor.fetchone()
+                if row:
+                    sql_text = row.get("SQL_TEXT", "")[:8192]
+                    break
+            except Exception:
+                continue
+        if not sql_text:
+            sql_text = (metrics_row.get("example") or "")[:8192]
+        if not sql_text:
+            return False
+
+        # 2. 执行 EXPLAIN（带超时保护）
+        # 注意：sql_text 是完整的 SQL 语句（含字面值），不能用 pymysql 参数 %s
+        # 传参，否则 pymysql 会把它当成字符串值做单引号包裹，导致语法错误。
+        # 这里用 Python 字符串拼接，sql_text 来自 MySQL history 表，非用户输入。
+        plan_json_raw = None
+
+        # 先尝试 MariaDB SET STATEMENT 语法，再 MySQL hint 语法
+        try:
+            cursor.execute(
+                "SET STATEMENT max_statement_time=%s FOR EXPLAIN FORMAT=JSON "
+                + sql_text,
+                (EXPLAIN_TIMEOUT,),
+            )
+            plan_json_raw = cursor.fetchone()
+        except Exception as e1:
+            try:
+                cursor.execute(
+                    "EXPLAIN FORMAT=JSON /*+ MAX_EXECUTION_TIME(%s) */ "
+                    + sql_text,
+                    (EXPLAIN_TIMEOUT * 1000,),
+                )
+                plan_json_raw = cursor.fetchone()
+            except Exception as e2:
+                _log.warning(
+                    "[explain] EXPLAIN failed instance=%s: "
+                    "mariadb=%s mysql=%s sql_preview=%s",
+                    self.instance.name, e1, e2, sql_text[:100],
+                )
+                return False
+        if not plan_json_raw:
+            return False
+
+        # 3. 解析 + 提取结构摘要
+        # DictCursor 返回 {'EXPLAIN': 'json_str'}，按 key 取；同时兼容 tuple 模式
+        import json as _json
+        try:
+            if isinstance(plan_json_raw, dict):
+                plan_str = plan_json_raw.get("EXPLAIN", "")
+            elif isinstance(plan_json_raw, (list, tuple)):
+                plan_str = plan_json_raw[0]
+            else:
+                plan_str = str(plan_json_raw)
+            plan_dict = _json.loads(plan_str) if isinstance(plan_str, str) else plan_str
+        except (_json.JSONDecodeError, IndexError, TypeError, KeyError):
+            return False
+
+        plan_summary = normalize_plan_summary(plan_dict)
+        plan_hash = hashlib.md5(plan_summary.encode()).hexdigest()
+
+        # 4. 去重检查
+        if not self._should_save_plan(fingerprint, plan_hash):
+            return True  # 计划未变，但 EXPLAIN 本身成功了
+
+        # 5. 写入 ClickHouse execution_plans
+        from datetime import datetime as _dt
+        plan_id = hashlib.md5(
+            f"{fingerprint}{_dt.utcnow().isoformat()}".encode()
+        ).hexdigest()
+
+        try:
+            from ..clickhouse import get_writer
+            get_writer().write_execution_plans([{
+                "plan_id": plan_id,
+                "fingerprint": fingerprint,
+                "service_name": self.instance.name,
+                "schema": schema,
+                "plan_json": _json.dumps(plan_dict, ensure_ascii=False),
+                "plan_summary": plan_summary,
+                "plan_hash": plan_hash,
+                "query_example": sql_text[:2000],
+                "created_at": _dt.utcnow(),
+                "instance_id": self.instance.id,
+            }])
+        except Exception:
+            pass
+
+        # 6. 回写 metrics_row，让同批次 metrics 写入时带上 planid
+        metrics_row["planid"] = plan_id
+        metrics_row["explain_fingerprint"] = plan_hash
+        return True
+
+    def _should_save_plan(self, fingerprint, new_plan_hash):
+        """检查 EXPLAIN 是否与上一次不同。
+
+        缓存 key 含 instance name：不同实例上相同 fingerprint 的计划可能完全不同。
+        """
+        cache_key = f"{self.instance.name}:{fingerprint}"
+        cached = self._plan_cache.get(cache_key)
+        if cached is not None:
+            return cached != new_plan_hash
+
+        try:
+            from ..clickhouse import get_writer
+            writer = get_writer()
+            rows = writer.execute(
+                "SELECT plan_hash FROM pharos_db.execution_plans "
+                "WHERE fingerprint = %(fp)s AND service_name = %(svc)s "
+                "ORDER BY created_at DESC LIMIT 1",
+                {"fp": fingerprint, "svc": self.instance.name},
+            )
+            last_hash = rows[0][0] if rows else None
+        except Exception:
+            last_hash = None
+
+        self._plan_cache[cache_key] = last_hash
+        return last_hash != new_plan_hash
