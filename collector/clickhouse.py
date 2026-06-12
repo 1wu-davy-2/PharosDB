@@ -157,10 +157,13 @@ class ClickHouseWriter:
             pass
         self._client = None
 
-    def execute(self, sql: str, params=None, with_column_types=False):
-        """通用查询接口，返回行列表。"""
+    def execute(self, sql: str, params=None, with_column_types=True):
+        """通用查询接口，返回 (rows, column_types) 元组。"""
         client = self._get_client()
-        return client.execute(sql, params or [], with_column_types=with_column_types)
+        if hasattr(self, "_last_error"):
+            self._reset_client()
+            del self._last_error
+        return client.execute(sql, params or {}, with_column_types=with_column_types)
 
     def write_lock_waits(self, rows: list[dict]) -> int:
         """批量写入 lock_waits 表。"""

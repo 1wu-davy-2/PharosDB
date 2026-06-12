@@ -30,8 +30,10 @@ class CollectorConfig(AppConfig):
         try:
             from django.db import connection
             if "collector_database_instance" not in connection.introspection.table_names():
+                logger.info("[boot] collector_database_instance 表不存在，跳过调度器恢复")
                 return
-        except Exception:
+        except Exception as e:
+            logger.error(f"[boot] 检查数据库表失败，调度器未启动: {e}")
             return
 
         from .scheduler import lock_registry, registry

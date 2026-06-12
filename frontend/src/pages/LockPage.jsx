@@ -308,6 +308,7 @@ export default function LockPage() {
   // history
   const [histRows, setHistRows] = useState([]);
   const [histLoading, setHistLoading] = useState(false);
+  const [histError, setHistError] = useState("");
   const [histHours, setHistHours] = useState(1);
   const [deadlockOnly, setDeadlockOnly] = useState(false);
 
@@ -337,9 +338,10 @@ export default function LockPage() {
   const fetchHistory = useCallback(() => {
     if (!selectedId) return;
     setHistLoading(true);
+    setHistError("");
     api.get(`/locks/history/?instance_id=${selectedId}&hours=${histHours}&deadlock_only=${deadlockOnly}`)
       .then(res => setHistRows(res.data.rows || []))
-      .catch(() => setHistRows([]))
+      .catch(err => { setHistRows([]); setHistError(err.response?.data?.error || err.message); })
       .finally(() => setHistLoading(false));
   }, [selectedId, histHours, deadlockOnly]);
 
@@ -448,6 +450,7 @@ export default function LockPage() {
                       {hasDeadlock ? t("locks.has_deadlock") : t("locks.no_deadlock")}
                     </span>
                   )}
+                  <Legend t={t} />
                 </div>
 
                 {topoLoading && !topology && (
@@ -464,14 +467,11 @@ export default function LockPage() {
                 )}
 
                 {hasLocks && (
-                  <>
-                    <LockGraph
-                      nodes={topology.nodes}
-                      edges={topology.edges}
-                      onNodeClick={setSelectedItem}
-                    />
-                    <Legend t={t} />
-                  </>
+                  <LockGraph
+                    nodes={topology.nodes}
+                    edges={topology.edges}
+                    onNodeClick={setSelectedItem}
+                  />
                 )}
               </div>
             )}
@@ -481,9 +481,11 @@ export default function LockPage() {
                 <div className="lock-card-header">
                   <span className="lock-card-title">{t("locks.history_title")}</span>
                 </div>
-                {histLoading
-                  ? <div className="lock-loading">{t("common.loading")}</div>
-                  : <HistoryTable rows={histRows} onRowClick={setSelectedItem} />
+                {histError
+                  ? <div className="lock-error">{histError}</div>
+                  : histLoading
+                    ? <div className="lock-loading">{t("common.loading")}</div>
+                    : <HistoryTable rows={histRows} onRowClick={setSelectedItem} />
                 }
               </div>
             )}

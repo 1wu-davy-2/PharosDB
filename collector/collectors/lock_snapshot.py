@@ -231,16 +231,20 @@ class LockSnapshotCollector:
                 "is_deadlock":        1 if has_deadlock else 0,
             })
 
+        ch_error = ""
         try:
             from ..clickhouse import ClickHouseWriter
             ClickHouseWriter().write_lock_waits(ch_rows)
+            logger.info(f"[LockCollector] {self.instance.name} 写入 {len(ch_rows)} 行到 ClickHouse lock_waits")
         except Exception as e:
-            logger.error(f"[LockCollector] ClickHouse 写入失败: {e}")
+            ch_error = str(e)
+            logger.error(f"[LockCollector] {self.instance.name} ClickHouse 写入失败: {e}")
 
         return LockCollectResult(
-            success=True,
+            success=not ch_error,
             lock_count=len(rows),
             has_deadlock=has_deadlock,
             deadlock_cycles=cycles,
             raw_rows=rows,
+            error=ch_error,
         )

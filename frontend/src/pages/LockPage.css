@@ -225,9 +225,7 @@
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 10px 18px;
-  border-top: 1px solid var(--color-border);
-  background: var(--color-surface);
+  margin-left: auto;
 }
 
 .lock-legend-title {

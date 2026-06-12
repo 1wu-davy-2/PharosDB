@@ -24,9 +24,7 @@ function Sidebar({ collapsed, onToggle }) {
   return (
     <aside className={`sidebar ${collapsed ? "sidebar--closed" : ""}`}>
       <div className="sidebar-brand">
-        <span className="material-symbols-outlined sidebar-logo" style={{ fontVariationSettings: "'FILL' 1" }}>
-          lightbulb
-        </span>
+        <img src="/lighthouse.svg" alt="PharosDB" className="sidebar-logo" />
         {!collapsed && <span className="sidebar-title">PharosDB</span>}
       </div>
 
