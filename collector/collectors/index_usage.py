@@ -39,10 +39,11 @@ _SQL = """
 class IndexUsageCollector:
     """采集 MySQL/MariaDB 的索引使用统计，写入 ClickHouse。"""
 
+    # 跨采集周期的快照缓存: key="instance: schema.table.index" → (count_read, count_write)
+    _snapshot_cache: dict[str, tuple[int, int]] = {}
+
     def __init__(self, instance):
         self.instance = instance
-        # 上次快照缓存，用于去重: key="schema.table.index" → (count_read, count_write)
-        self._last_snapshot: dict[str, tuple[int, int]] = {}
 
     def _connect(self):
         return pymysql.connect(
@@ -81,15 +82,16 @@ class IndexUsageCollector:
 
         for r in rows:
             key = f"{r['object_schema']}.{r['object_name']}.{r['index_name']}"
+            cs_key = f"{self.instance.name}:{key}"
             cr = int(r["count_read"] or 0)
             cw = int(r["count_write"] or 0)
-            new_snapshot[key] = (cr, cw)
+            new_snapshot[cs_key] = (cr, cw)
 
-            last = self._last_snapshot.get(key)
+            last = self._snapshot_cache.get(cs_key)
             if last is None or last != (cr, cw):
                 changed.append(r)
 
-        self._last_snapshot = new_snapshot
+        self._snapshot_cache.update(new_snapshot)
 
         if not changed:
             return 0

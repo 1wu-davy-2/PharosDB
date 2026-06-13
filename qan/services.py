@@ -310,6 +310,28 @@ def get_service_list():
     return [row[0] for row in rows]
 
 
+def _extract_all_tables(plan_summary: str) -> list[dict]:
+    """从 plan_summary JSON 中提取所有 access_type=ALL 的 table 节点。"""
+    import json as _json
+    results = []
+
+    def _walk(node):
+        if isinstance(node, list):
+            for item in node:
+                _walk(item)
+        elif isinstance(node, dict):
+            if "table_name" in node and node.get("access_type") == "ALL":
+                results.append(node)
+            for v in node.values():
+                _walk(v)
+
+    try:
+        _walk(_json.loads(plan_summary))
+    except Exception:
+        pass
+    return results
+
+
 def index_analysis(service_name: str):
     """索引分析 — 未使用索引 + 缺失索引推荐。"""
     client = _get_client()
@@ -349,6 +371,8 @@ def index_analysis(service_name: str):
         pass
 
     # 2. 缺失索引：EXPLAIN 中 access_type=ALL 的查询
+    #    用 LIKE 匹配，因为 access_type 嵌套在 table → container 路径下，
+    #    JSONExtractString(root, 'access_type') 无法提取嵌套字段。
     missing = []
     try:
         rows, _cols = client.execute(
@@ -358,22 +382,35 @@ def index_analysis(service_name: str):
                 schema,
                 query_example,
                 plan_hash,
-                created_at,
-                JSONExtractString(plan_summary, 'access_type') AS access_type,
-                JSONExtractString(plan_summary, 'key')          AS idx_key,
-                JSONExtractString(plan_summary, 'table_name')   AS tbl,
-                JSONExtractString(plan_summary, 'possible_keys') AS possible_keys
+                plan_summary,
+                created_at
             FROM pharos_db.execution_plans
             WHERE service_name = %(svc)s
-              AND JSONExtractString(plan_summary, 'access_type') = 'ALL'
+              AND plan_summary LIKE %(pat)s
             ORDER BY created_at DESC
             LIMIT 20
             """,
-            {"svc": service_name},
+            {"svc": service_name, "pat": '%"access_type":"ALL"%'},
             with_column_types=True,
         )
         cols = [c[0] for c in _cols]
-        missing = [dict(zip(cols, r)) for r in rows]
+        for r in rows:
+            d = dict(zip(cols, r))
+            plan_summary = d.pop("plan_summary", "{}")
+            # 提取 plan_summary 中所有 ALL 扫描的 table 节点
+            tables = _extract_all_tables(plan_summary)
+            if tables:
+                t = tables[0]
+                d["tbl"] = t.get("table_name", "")
+                d["access_type"] = "ALL"
+                d["possible_keys"] = ", ".join(t.get("possible_keys", []) or [])
+                d["idx_key"] = t.get("key") or "(none)"
+            else:
+                d["tbl"] = ""
+                d["access_type"] = "ALL"
+                d["possible_keys"] = ""
+                d["idx_key"] = "(none)"
+            missing.append(d)
     except Exception:
         pass
 
