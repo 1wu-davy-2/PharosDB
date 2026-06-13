@@ -131,15 +131,15 @@ python manage.py createsuperuser
 
 | 文档 | 说明 |
 |------|------|
-| [架构设计](docs/architecture_design.md) | 系统架构、技术选型、数据流 |
-| [执行计划](docs/execution_plan.md) | 早期执行计划，项目路线图 |
-| [告警中心](docs/alert_center_design.md) | 告警规则、事件、状态机、Webhook |
-| [执行计划采集](docs/execution_plan_design.md) | EXPLAIN 采集、存储、对比方案 |
-| [锁等待 / 死锁](docs/lock_wait_deadlock_design.md) | 锁链拓扑可视化设计与实现 |
-| [调度器漂移修复](docs/scheduler_drift_fix.md) | 采集间隔秒级漂移的根因与修复 |
+| [系统架构设计](docs/系统架构设计.md) | 系统架构、技术选型、数据流 |
+| [执行计划路线图](docs/执行计划路线图.md) | 早期执行计划，项目路线图 |
+| [告警中心设计](docs/告警中心设计.md) | 告警规则、事件、状态机、Webhook |
+| [执行计划采集与对比](docs/执行计划采集与对比.md) | EXPLAIN 采集、存储、对比方案 |
+| [锁等待 / 死锁](docs/锁等待与死锁设计.md) | 锁链拓扑可视化设计与实现 |
+| [调度器漂移修复](docs/调度器漂移修复.md) | 采集间隔秒级漂移的根因与修复 |
 | [QAN 采集循环](docs/QAN_Agent_采集核心循环.md) | PMM PerfSchema / Slowlog / PGSM Agent 解析 |
-| [PMM 架构指南](docs/pmm-source-architecture-guide.md) | PMM 源码架构参考 |
-| [PMM 告警模板](docs/pmm_alert_templates_reference.md) | PMM 内置告警模板完整参考 |
+| [PMM 源码架构](docs/PMM源码架构指南.md) | PMM 源码架构参考 |
+| [PMM 告警模板](docs/PMM告警模板参考.md) | PMM 内置告警模板完整参考 |
 
 ---
 

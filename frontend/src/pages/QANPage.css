@@ -535,6 +535,204 @@
   margin-left: 6px;
 }
 
+/* diff highlighting in tree nodes */
+.plan-node--diff-highlight {
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 3px;
+}
+.plan-node--diff-optimized {
+  background: rgba(52, 211, 153, 0.1);
+  border-radius: 3px;
+}
+.plan-node--diff-degraded {
+  background: rgba(248, 113, 113, 0.1);
+  border-radius: 3px;
+}
+.plan-node--diff-modified {
+  background: rgba(148, 163, 184, 0.1);
+  border-radius: 3px;
+}
+
+/* ─── Plan mode bar ─── */
+.qan-plan-mode-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.qan-plan-mode-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.qan-plan-mode-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.qan-plan-mode-btn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.qan-plan-mode-btn--active {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+.qan-plan-mode-spacer { flex: 1; }
+
+/* ─── Plan timeline (version list) ─── */
+.qan-plan-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 8px;
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 4px;
+}
+.qan-plan-timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.1s;
+  font-size: 12px;
+  border: 1px solid transparent;
+  background: none;
+  font-family: inherit;
+  color: var(--color-text);
+  text-align: left;
+}
+.qan-plan-timeline-item:hover { background: var(--color-accent-light); }
+.qan-plan-timeline-item--selected {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+}
+.qan-plan-timeline-time {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  min-width: 100px;
+  flex-shrink: 0;
+}
+.qan-plan-timeline-ops {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex: 1;
+  font-size: 11px;
+}
+.qan-plan-timeline-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* ─── Compare selectors ─── */
+.qan-plan-compare-selectors {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.qan-plan-compare-select {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 6px;
+  font-size: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+}
+.qan-plan-compare-vs {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.qan-plan-compare-btn {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
+  background: var(--color-accent);
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+.qan-plan-compare-btn:hover { opacity: 0.85; }
+.qan-plan-compare-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Section label ─── */
+.qan-plan-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+  padding: 3px 8px;
+  background: var(--color-bg-subtle);
+  border-radius: 4px;
+  display: inline-block;
+  letter-spacing: 0.02em;
+}
+
+/* ─── Manual collect form ─── */
+.qan-plan-collect-section {
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+.qan-plan-collect-sql {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px 10px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: #0f1a2e;
+  color: #e2e8f0;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.qan-plan-collect-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.qan-plan-collect-submit {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
+  background: var(--color-accent);
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+}
+.qan-plan-collect-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* ═══ 优化建议 ═════════════════════════════════════ */
 .qan-suggest-card {
   display: flex;

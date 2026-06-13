@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { Fragment, useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
@@ -254,7 +254,7 @@ export default function InstancesPage() {
                 </thead>
                 <tbody>
                   {filtered.map((inst) => (
-                    <>
+                    <Fragment key={inst.id}>
                       <tr key={inst.id} className="inst-row">
                         {/* Status — consistent span wrapper for all three states */}
                         <td className="inst-td-status">
@@ -413,7 +413,7 @@ export default function InstancesPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
