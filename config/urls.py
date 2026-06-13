@@ -8,4 +8,5 @@ urlpatterns = [
     path("api/qan/", include("qan.urls", namespace="qan")),
     path("api/locks/", include("locks.urls", namespace="locks")),
     path("api/alerts/", include("alerts.urls", namespace="alerts")),
+    path("api/", include("system_config.urls", namespace="system_config")),
 ]

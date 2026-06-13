@@ -56,7 +56,7 @@ LIMIT 1
 
 # ── EXPLAIN 相关 ──────────────────────────────────────────────────────────────
 
-TOP_N_EXPLAIN = 5       # 每个采集周期对 top-5 慢查询执行 EXPLAIN
+TOP_N_EXPLAIN = 5       # 默认值，会被 system_config 中的 top_n_explain 覆盖
 EXPLAIN_TIMEOUT = 3      # EXPLAIN 最大允许秒数
 
 # 排除系统库 — 避免采集器自己的查询被 EXPLAIN
@@ -188,11 +188,18 @@ class MySQLCollector(BaseCollector):
             ch_row = self._build_ch_row(row, delta, example, now)
             result.append(ch_row)
 
+        # ── 动态读取全局配置 ──
+        try:
+            from system_config.models import SystemConfig
+            top_n = SystemConfig.get_value("top_n_explain", TOP_N_EXPLAIN)
+        except Exception:
+            top_n = TOP_N_EXPLAIN
+
         # ── 对 top-N 慢查询执行 EXPLAIN ──
         # 只对 DML 类型查询执行 EXPLAIN（SHOW/SET/其他不行）
         top_queries = sorted(
             result, key=lambda r: r["m_query_time_sum"], reverse=True
-        )[:TOP_N_EXPLAIN * 2]  # 多取一些，防止过滤后不足
+        )[:top_n * 2]  # 多取一些，防止过滤后不足
         explain_count = 0
         for q in top_queries:
             fingerprint = (q.get("fingerprint") or "").strip().upper()
@@ -203,7 +210,7 @@ class MySQLCollector(BaseCollector):
                 continue
             if self._maybe_collect_explain(q, cur):
                 explain_count += 1
-                if explain_count >= TOP_N_EXPLAIN:
+                if explain_count >= top_n:
                     break
 
         cur.close()

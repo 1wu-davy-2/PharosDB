@@ -707,10 +707,45 @@ export default function QANPage() {
                   {planLoading ? (
                     <div className="loading-wrap"><div className="mini-spinner" /> {t("common.loading")}</div>
                   ) : plans.length === 0 ? (
-                    <div className="empty-state" style={{ padding: 24 }}>
-                      <span className="material-symbols-outlined empty-state-icon">account_tree</span>
-                      <div className="empty-state-title">{t("qan.no_plan")}</div>
-                      <div className="empty-state-desc">{t("qan.no_plan_desc")}</div>
+                    <div className="qan-no-plan-container">
+                      <div className="empty-state" style={{ padding: "20px 24px 16px" }}>
+                        <span className="material-symbols-outlined empty-state-icon">account_tree</span>
+                        <div className="empty-state-title">{t("qan.no_plan")}</div>
+                        <div className="empty-state-desc">{t("qan.no_plan_desc")}</div>
+                      </div>
+
+                      <div className="qan-no-plan-reasons">
+                        <div className="qan-no-plan-reasons-title">
+                          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>help</span>
+                          {t("qan.no_plan_reason_title")}
+                        </div>
+                        <ul className="qan-no-plan-reasons-list">
+                          <li>
+                            <span className="material-symbols-outlined qan-reason-icon">filter_alt</span>
+                            {t("qan.no_plan_reason_1")}
+                          </li>
+                          <li>
+                            <span className="material-symbols-outlined qan-reason-icon">block</span>
+                            {t("qan.no_plan_reason_2")}
+                          </li>
+                          <li>
+                            <span className="material-symbols-outlined qan-reason-icon">cancel</span>
+                            {t("qan.no_plan_reason_3")}
+                          </li>
+                        </ul>
+
+                        <div className="qan-no-plan-action">
+                          <span>{t("qan.no_plan_action")}</span>
+                          <button
+                            className="qan-plan-collect-submit"
+                            onClick={() => { setShowExplainForm(true); setExplainError(""); setExplainResult(null); }}
+                            style={{ whiteSpace: "nowrap" }}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>play_arrow</span>
+                            {t("qan.plan_manual_collect")}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <>

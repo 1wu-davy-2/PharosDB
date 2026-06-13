@@ -15,7 +15,8 @@
     "qan": "SQL 分析",
     "instances": "实例管理",
     "locks": "锁分析",
-    "alerts": "告警中心"
+    "alerts": "告警中心",
+    "settings": "全局设置"
   },
   "login": {
     "subtitle": "数据库可观测性平台",
@@ -173,7 +174,12 @@
     "index_load_hint": "请先选择一个服务查看索引建议",
     "index_missing_detail": "全表扫描 {{access}}，表 {{tbl}}，可用索引: {{keys}}",
     "no_plan": "暂无执行计划",
-    "no_plan_desc": "该查询尚未采集执行计划，请先对慢查询执行 EXPLAIN 采集",
+    "no_plan_desc": "该查询尚未采集执行计划",
+    "no_plan_reason_title": "为什么会这样？",
+    "no_plan_reason_1": "自动 EXPLAIN 仅采集 每个周期 Top-N 的慢查询（当前: 5 条/周期）",
+    "no_plan_reason_2": "系统库查询被排除（performance_schema, information_schema, mysql, sys）",
+    "no_plan_reason_3": "非 DML 语句（SHOW/SET/FLUSH...）不会执行 EXPLAIN",
+    "no_plan_action": "如下方 SQL 可执行 EXPLAIN，请点击「手动采集」按钮：",
     "plan_mode_view": "浏览计划",
     "plan_mode_compare": "对比计划",
     "plan_manual_collect": "手动采集",
@@ -233,6 +239,15 @@
     "trend_avg_time": "平均耗时",
     "trend_max_time": "最大耗时",
     "trend_rows": "扫描行数"
+  },
+  "settings": {
+    "title": "全局设置",
+    "hint": "修改后即时生效，无需重启服务",
+    "save": "保存",
+    "save_success": "保存成功，参数已即时生效",
+    "save_failed": "保存失败，请重试",
+    "load_failed": "加载配置失败",
+    "no_changes": "没有变更需要保存"
   },
   "locks": {
     "title": "锁分析",

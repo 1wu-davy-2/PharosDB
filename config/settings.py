@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "qan",
     "locks",
     "alerts",
+    "system_config",
 ]
 
 MIDDLEWARE = [
