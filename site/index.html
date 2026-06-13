@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PharosDB — 数据库可观测性平台</title>
+<meta name="description" content="像灯塔一样，穿透数据库性能迷雾。Agentless 模式的数据库可观测性平台，SQL 分析、锁拓扑、告警中心、执行计划对比。">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --amber: #d97706;
+    --amber-light: #fbbf24;
+    --amber-bg: rgba(217,119,6,0.08);
+    --navy: #0f172a;
+    --navy-light: #1e293b;
+    --surface: #ffffff;
+    --bg: #f1f5f9;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --red: #dc2626;
+    --green: #16a34a;
+    --blue: #2563eb;
+    --shadow: 0 1px 3px rgba(0,0,0,.08);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,.1);
+    --radius: 10px;
+    --font-mono: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --shadow: 0 1px 3px rgba(0,0,0,.3);
+      --shadow-lg: 0 10px 25px rgba(0,0,0,.4);
+      --amber-bg: rgba(251,191,36,0.1);
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1a2740 40%, #1e3a5f 100%);
+    color: #fff;
+    padding: 100px 24px 80px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 30% 50%, rgba(251,191,36,.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(37,99,235,.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-size: 13px;
+    color: var(--amber-light);
+    margin-bottom: 24px;
+    backdrop-filter: blur(4px);
+  }
+  .hero h1 {
+    font-size: clamp(36px, 6vw, 60px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .hero h1 span { color: var(--amber-light); }
+  .hero .tagline {
+    font-size: clamp(16px, 2.5vw, 20px);
+    color: rgba(255,255,255,.65);
+    max-width: 560px;
+    margin: 0 auto 36px;
+    position: relative;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all .2s;
+    border: none;
+  }
+  .btn-primary {
+    background: var(--amber);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #b45309; transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.25);
+  }
+  .btn-outline:hover { border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.06); }
+
+  /* ── Section ── */
+  .section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 24px;
+  }
+  .section-header {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+  .section-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -.5px;
+    margin-bottom: 8px;
+  }
+  .section-header p {
+    color: var(--text-muted);
+    font-size: 15px;
+  }
+
+  /* ── Feature Grid ── */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .feature-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+  .feature-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+  .icon-amber { background: var(--amber-bg); color: var(--amber); }
+  .icon-blue  { background: rgba(37,99,235,.08); color: var(--blue); }
+  .icon-green { background: rgba(22,163,74,.08); color: var(--green); }
+  .icon-red   { background: rgba(220,38,38,.08); color: var(--red); }
+
+  .feature-card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .feature-card p {
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* ── Architecture ── */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px 28px;
+    overflow-x: auto;
+  }
+  .arch-diagram pre {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    white-space: pre;
+  }
+  .arch-diagram pre b { color: var(--amber); font-weight: 700; }
+  .arch-diagram pre em { color: var(--blue); font-style: normal; font-weight: 600; }
+
+  /* ── Tech Table ── */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .tech-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .tech-item .label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .tech-item .value {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* ── Stats ── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 600px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card {
+    text-align: center;
+    padding: 24px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .stat-num {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--amber);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    text-align: center;
+    padding: 32px 24px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .footer a { color: var(--amber); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .hero { padding: 64px 20px 48px; }
+    .section { padding: 48px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ Hero ═══ -->
+<header class="hero">
+  <div class="hero-badge">🚀 开源 · Agentless</div>
+  <h1><span>Pharos</span>DB</h1>
+  <p class="tagline">
+    像灯塔一样，穿透数据库性能迷雾。把慢查询、锁等待、执行计划这些分散的信号拼成一张完整的图。
+  </p>
+  <div class="hero-actions">
+    <a href="https://github.com/1wu-davy-2/PharosDB" class="btn btn-primary" target="_blank">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      GitHub
+    </a>
+    <a href="#features" class="btn btn-outline">了解更多</a>
+  </div>
+</header>
+
+<!-- ═══ Stats ═══ -->
+<section class="section" style="padding-top: 40px; padding-bottom: 0;">
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-num">3</div>
+      <div class="stat-label">数据库类型</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">9</div>
+      <div class="stat-label">核心模块</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">Agentless</div>
+      <div class="stat-label">采集模式</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">200</div>
+      <div class="stat-label">次/周期 指标采集</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Features ═══ -->
+<section class="section" id="features">
+  <div class="section-header">
+    <h2>核心能力</h2>
+    <p>专注那些现有工具做不好的事情</p>
+  </div>
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-icon icon-blue">&#x1F4CA;</div>
+      <h3>SQL 分析（QAN）</h3>
+      <p>基于 performance_schema 或 pg_stat_statements 的慢查询聚合。SQL 指纹识别、执行频次统计、耗时分布、扫描行数分析，支持按服务和时段过滤。Top-N 慢查询一目了然。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon icon-red">&#x1F510;</div>
+      <h3>锁链拓扑可视化</h3>
+      <p>实时检测行锁等待链，渲染为有向图。谁阻塞了谁、等了多久、涉及哪张表。DFS 算法自动检测死锁环，不依赖 INNODB STATUS 文本解析。自适应 30s / 5s 轮询。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon icon-amber">&#x1F514;</div>
+      <h3>告警中心</h3>
+      <p>四种告警规则：慢查询耗时、无索引比例、查询总量、自定义 SQL。ClickHouse 聚合触发，Webhook 通知兼容 Alertmanager v4。firing / resolved 状态机自动管理。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon icon-green">&#x1F9EA;</div>
+      <h3>执行计划对比</h3>
+      <p>自动对 top-5 慢查询执行 EXPLAIN，持久化到 ClickHouse。历史版本时间线，逐节点 diff 对照——访问类型变化、索引增减、filesort 出现，一目了然。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon icon-blue">&#x26A1;</div>
+      <h3>零依赖调度器</h3>
+      <p>内置线程调度器，无需 Redis / Celery。每个实例独立采集间隔，run_start 时间锚点消除秒级漂移。瞬时重启自动从 DB 恢复所有调度状态。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon icon-green">&#x1F310;</div>
+      <h3>中英文 + 暗色主题</h3>
+      <p>全量 CSS 变量驱动亮/暗色切换。react-i18next 国际化，中英文一键切换。Vite 5 + React 18，首屏加载 < 200KB。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Architecture ═══ -->
+<section class="section" style="background: var(--bg);">
+  <div class="section-header">
+    <h2>系统架构</h2>
+    <p>Agentless 直连采集 &middot; ClickHouse 分析存储 &middot; React 前端</p>
+  </div>
+  <div class="arch-diagram">
+<pre>
+┌─────────────────────────────────────────────────────────────────┐
+│                    <b>PharosDB Frontend</b>                          │
+│               React 18 + Vite 5  (port 17000)                   │
+│   Dashboard / QAN / Locks / Alerts / Instances                  │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ REST API (JWT)
+┌──────────────────────────▼──────────────────────────────────────┐
+│                   <b>PharosDB Backend</b> (Django 5)                │
+│                                                                  │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐   │
+│  │ <em>accounts</em> │ │<em>collector</em>│ │  <em>qan</em>    │ │  <em>alerts</em>          │   │
+│  │ JWT 认证  │ │ 数据采集 │ │ SQL 分析 │ │ 规则 + 事件      │   │
+│  └──────────┘ └────┬─────┘ └────┬─────┘ └────────┬─────────┘   │
+│                    │             │                │              │
+│     Threading.Timer 链式调度    ClickHouse 查询    Webhook       │
+│     (无 Celery/Redis 依赖)                                       │
+└────────────────────┬────────────┬────────────────────────────────┘
+                     │            │
+              ┌──────▼──┐  ┌─────▼──────┐
+              │ MariaDB │  │ ClickHouse │
+              │ 元数据   │  │ 指标 + 锁  │
+              │ 配置/用户│  │ 快照 + 计划│
+              └─────────┘  └────────────┘
+</pre>
+  </div>
+</section>
+
+<!-- ═══ Tech Stack ═══ -->
+<section class="section">
+  <div class="section-header">
+    <h2>技术栈</h2>
+    <p>精选组合，各司其职</p>
+  </div>
+  <div class="tech-grid">
+    <div class="tech-item">
+      <span style="font-size:24px">&#x269B;</span>
+      <div>
+        <div class="label">前端</div>
+        <div class="value">React 18 · Vite 5 · react-i18next · CSS Variables</div>
+      </div>
+    </div>
+    <div class="tech-item">
+      <span style="font-size:24px">&#x1F40D;</span>
+      <div>
+        <div class="label">后端</div>
+        <div class="value">Python 3.12 · Django 5 · DRF · SimpleJWT</div>
+      </div>
+    </div>
+    <div class="tech-item">
+      <span style="font-size:24px">&#x1F4BE;</span>
+      <div>
+        <div class="label">分析存储</div>
+        <div class="value">ClickHouse · MergeTree + TTL</div>
+      </div>
+    </div>
+    <div class="tech-item">
+      <span style="font-size:24px">&#x1F5C4;</span>
+      <div>
+        <div class="label">元数据库</div>
+        <div class="value">MariaDB 10.5+ · MySQL 5.7+</div>
+      </div>
+    </div>
+    <div class="tech-item">
+      <span style="font-size:24px">&#x1F4E1;</span>
+      <div>
+        <div class="label">采集驱动</div>
+        <div class="value">pymysql · psycopg2 · clickhouse-driver</div>
+      </div>
+    </div>
+    <div class="tech-item">
+      <span style="font-size:24px">&#x1F3D7;</span>
+      <div>
+        <div class="label">部署</div>
+        <div class="value">dev.ps1 一键启动 · Windows / Linux</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Footer ═══ -->
+<footer class="footer">
+  <p>
+    <strong>PharosDB</strong> &mdash; 像灯塔一样，穿透数据库性能迷雾
+     &middot; <a href="https://github.com/1wu-davy-2/PharosDB" target="_blank">GitHub</a>
+     &middot; <a href="https://github.com/1wu-davy-2/PharosDB/tree/main/docs" target="_blank">文档</a>
+  </p>
+</footer>
+
+</body>
+</html>
