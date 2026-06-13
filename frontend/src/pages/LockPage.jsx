@@ -164,8 +164,8 @@ function LockGraph({ nodes, edges, onNodeClick }) {
           <g
             key={node.trx_id}
             className="lock-graph-node"
-            onClick={() => onNodeClick(node)}
-            style={{ cursor: "pointer" }}
+            onClick={() => onNodeClick?.(node)}
+            style={{ cursor: onNodeClick ? "pointer" : "default" }}
           >
             <circle cx={p.x} cy={p.y} r={22} fill={fill} stroke={stroke} strokeWidth={2} />
             <text x={p.x} y={p.y + 4} className="lock-node-label">{label}</text>
@@ -224,7 +224,7 @@ function HistoryTable({ rows, onRowClick }) {
 
 // ─── detail drawer ────────────────────────────────────────────────────────────
 
-function DetailDrawer({ item, onClose }) {
+function DetailDrawer({ item, onClose, snapshotTopo, snapshotLoading }) {
   const { t } = useTranslation();
   if (!item) return null;
 
@@ -261,6 +261,20 @@ function DetailDrawer({ item, onClose }) {
               <span className="lock-drawer-key">{t("locks.col_time")}</span>
               <span className="lock-drawer-val">{new Date(item.ts * 1000).toLocaleString()}</span>
             </div>
+
+            {/* snapshot topology */}
+            {snapshotLoading ? (
+              <div className="lock-loading" style={{ padding: 16 }}>{t("common.loading")}</div>
+            ) : snapshotTopo && snapshotTopo.nodes?.length > 0 ? (
+              <div className="lock-drawer-section">
+                <div className="lock-drawer-key">{t("locks.topology_title")}</div>
+                <LockGraph
+                  nodes={snapshotTopo.nodes}
+                  edges={snapshotTopo.edges}
+                />
+              </div>
+            ) : null}
+
             <div className="lock-drawer-row">
               <span className="lock-drawer-key">Lock Mode</span>
               <span className="lock-drawer-val">{item.lock_mode} / {item.lock_type}</span>
@@ -313,6 +327,8 @@ export default function LockPage() {
   const [deadlockOnly, setDeadlockOnly] = useState(false);
 
   const [selectedItem, setSelectedItem] = useState(null);
+  const [snapshotTopo, setSnapshotTopo] = useState(null);
+  const [snapshotLoading, setSnapshotLoading] = useState(false);
 
   // load instances
   useEffect(() => {
@@ -359,6 +375,19 @@ export default function LockPage() {
   useEffect(() => {
     if (tab === "history") fetchHistory();
   }, [tab, fetchHistory]);
+
+  // fetch snapshot topology when a history row is selected
+  useEffect(() => {
+    if (!selectedItem || selectedItem.type) { setSnapshotTopo(null); return; }
+    // history row — has ts (unix timestamp) but no type
+    const inst = instances.find(i => String(i.id) === selectedId);
+    if (!inst || !selectedItem.ts) return;
+    setSnapshotLoading(true);
+    api.get(`/locks/history-snapshot/?service_name=${encodeURIComponent(inst.name)}&ts=${selectedItem.ts}`)
+      .then(res => setSnapshotTopo(res.data))
+      .catch(() => setSnapshotTopo(null))
+      .finally(() => setSnapshotLoading(false));
+  }, [selectedItem, selectedId, instances]);
 
   const hasLocks = topology && topology.nodes.length > 0;
   const hasDeadlock = topology?.has_deadlock;
@@ -492,7 +521,7 @@ export default function LockPage() {
           </div>
 
           {selectedItem && (
-            <DetailDrawer item={selectedItem} onClose={() => setSelectedItem(null)} />
+            <DetailDrawer item={selectedItem} onClose={() => setSelectedItem(null)} snapshotTopo={snapshotTopo} snapshotLoading={snapshotLoading} />
           )}
         </div>
       </div>

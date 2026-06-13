@@ -135,6 +135,68 @@ class LockTopologyView(APIView):
         return Response(_build_topology(rows))
 
 
+class LockHistorySnapshotView(APIView):
+    """GET /api/locks/history-snapshot/?service_name=xxx&ts=1750938940
+
+    查询 ClickHouse 中某次锁快照的全部行，还原锁链拓扑图。
+    ts 参数为 Unix 时间戳（与历史列表中的 ts 字段一致）。
+    """
+
+    def get(self, request):
+        svc = request.query_params.get("service_name")
+        ts = request.query_params.get("ts")
+        if not svc or not ts:
+            return Response({"error": "service_name 和 ts 参数必填"}, status=400)
+
+        sql = """
+            SELECT
+                service_name,
+                collected_at,
+                waiting_trx_id,
+                waiting_thread_id,
+                waiting_query,
+                waiting_age_seconds,
+                blocking_trx_id,
+                blocking_thread_id,
+                blocking_query,
+                lock_type,
+                lock_mode,
+                lock_object_schema,
+                lock_object_table,
+                lock_index,
+                lock_data,
+                is_deadlock
+            FROM pharos_db.lock_waits
+            WHERE service_name = %(svc)s
+              AND toInt32(toUnixTimestamp(collected_at)) = toInt32(%(ts)s)
+            LIMIT 200
+        """
+
+        try:
+            from collector.clickhouse import ClickHouseWriter
+            rows, _cols = ClickHouseWriter().execute(sql, {"svc": svc, "ts": ts})
+        except Exception as e:
+            logger.error(f"[LockHistorySnapshot] ClickHouse 查询失败: {e}")
+            return Response({"error": str(e)}, status=500)
+
+        if not rows:
+            return Response({"nodes": [], "edges": [], "has_deadlock": False, "deadlock_cycles": []})
+
+        col_names = [
+            "service_name", "collected_at",
+            "waiting_trx_id", "waiting_thread_id", "waiting_query",
+            "waiting_query_secs",  # CH 列是 waiting_age_seconds，映射为 _build_topology 期望的字段名
+            "blocking_trx_id", "blocking_thread_id", "blocking_query",
+            "lock_type", "lock_mode",
+            "lock_object_schema", "lock_object_table", "lock_index", "lock_data",
+            "is_deadlock",
+        ]
+        rows_dict = [dict(zip(col_names, r)) for r in rows]
+        result = _build_topology(rows_dict)
+        result["collected_at"] = rows_dict[0].get("collected_at")
+        return Response(result)
+
+
 class LockHistoryView(APIView):
     """GET /api/locks/history/?instance_id=<id>&hours=1&deadlock_only=false
 
