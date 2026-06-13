@@ -193,6 +193,7 @@ export default function QANPage() {
   const [explainResult, setExplainResult] = useState(null);
   const [explainError, setExplainError] = useState("");
   const [showExplainForm, setShowExplainForm] = useState(false);
+  const [planFullscreen, setPlanFullscreen] = useState(null); // { plan_json, title } or null
 
   const planTimerRef = useRef(null);
 
@@ -254,6 +255,7 @@ export default function QANPage() {
     setCompareResult(null);
     setExplainResult(null);
     setShowExplainForm(false);
+    setExplainSql("");
     setDetailLoading(true);
     try {
       const [dRes, tRes] = await Promise.all([
@@ -273,9 +275,11 @@ export default function QANPage() {
       const { data } = await api.get(`/qan/plans/?fingerprint=${encodeURIComponent(fingerprint)}&service=${selectedService}`);
       const list = data.plans || [];
       setPlans(list);
+      // 列表已包含 plan_json/plan_summary，无需再单独请求详情
       if (list.length > 0) {
         setSelectedPlanId(list[0].plan_id);
-        fetchPlanDetail(list[0].plan_id);
+        // 预热缓存（兼容 compare 等模式会查缓存的情况）
+        setPlanDetailCache((c) => ({ ...c, [list[0].plan_id]: list[0] }));
       }
     } catch { setPlans([]); } finally {
       setPlanLoading(false);
@@ -318,19 +322,26 @@ export default function QANPage() {
   };
 
   const handleManualExplain = async () => {
-    if (!detail) return;
+    const sqlToUse = effectiveExplainSql;
+    if (!sqlToUse.trim()) {
+      setExplainError(t("qan.plan_collect_empty_sql"));
+      return;
+    }
     setExplainLoading(true);
     setExplainError("");
     setExplainResult(null);
     try {
       const { data } = await api.post("/qan/explain/", {
         service: selectedService,
-        sql: explainSql || detail.example,
+        sql: sqlToUse,
+        digest: detail?.queryid || "",       // fallback: backend can look up SQL from history_long
       });
       setExplainResult(data);
-      planTimerRef.current = setTimeout(() => {
-        loadPlans(detail.fingerprint);
-      }, 1500);
+      if (detail?.fingerprint) {
+        planTimerRef.current = setTimeout(() => {
+          loadPlans(detail.fingerprint);
+        }, 1500);
+      }
     } catch (e) {
       setExplainError(e.response?.data?.error || t("qan.plan_collect_failed"));
     } finally {
@@ -371,6 +382,12 @@ export default function QANPage() {
   const trendMax = Math.max(...trend.map((x) => x[trendMetric] || 0), 0);
 
   // plan computed values
+  const effectiveExplainSql =
+    explainSql
+    || detail?.example
+    || (plans.length > 0 ? plans[0].query_example : "")
+    || "";
+
   const viewedPlan = selectedPlanId ? (planDetailCache[selectedPlanId] || plans.find((p) => p.plan_id === selectedPlanId)) : null;
   const diffPaths = compareResult?.diff ? new Set(compareResult.diff.map((d) => d.path)) : null;
   const diffMap = compareResult?.diff
@@ -378,6 +395,7 @@ export default function QANPage() {
     : null;
 
   return (
+    <>
     <AppLayout title={t("qan.title")}>
       {/* 筛选栏 */}
       <div className="card qan-filters">
@@ -702,7 +720,7 @@ export default function QANPage() {
                           <div className="qan-detail-label">{t("qan.plan_collect_title")}</div>
                           <textarea
                             className="qan-plan-collect-sql"
-                            value={explainSql || detail?.example || ""}
+                            value={effectiveExplainSql}
                             onChange={(e) => setExplainSql(e.target.value)}
                             placeholder="SELECT ..."
                           />
@@ -718,7 +736,17 @@ export default function QANPage() {
                           {explainError && <div className="lock-error" style={{ marginTop: 8 }}>{explainError}</div>}
                           {explainResult && (
                             <div className="qan-detail-section" style={{ marginTop: 12 }}>
-                              <div className="qan-detail-label" style={{ color: "var(--color-success)" }}>{t("qan.plan_collect_success")}</div>
+                              <div className="qan-detail-label" style={{ color: "var(--color-success)", display: "flex", alignItems: "center", gap: 8 }}>
+                                <span>{t("qan.plan_collect_success")}</span>
+                                <button
+                                  className="qan-plan-collect-submit qan-plan-collect-submit--outline"
+                                  onClick={() => setPlanFullscreen({ plan_json: explainResult.plan_json, title: explainResult.sql_text || explainSql })}
+                                  style={{ marginLeft: "auto" }}
+                                >
+                                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>fullscreen</span>
+                                  {t("qan.plan_fullscreen")}
+                                </button>
+                              </div>
                               <div className="qan-plan-tree">
                                 <PlanNode data={explainResult.plan_json} depth={0} />
                               </div>
@@ -738,7 +766,13 @@ export default function QANPage() {
                                 <button
                                   key={p.plan_id}
                                   className={`qan-plan-timeline-item ${selectedPlanId === p.plan_id ? "qan-plan-timeline-item--selected" : ""}`}
-                                  onClick={() => fetchPlanDetail(p.plan_id)}
+                                  onClick={() => {
+                                    setSelectedPlanId(p.plan_id);
+                                    // 预热缓存（列表数据已包含完整 plan_json）
+                                    if (!planDetailCache[p.plan_id]) {
+                                      setPlanDetailCache((c) => ({ ...c, [p.plan_id]: p }));
+                                    }
+                                  }}
                                 >
                                   <span className="qan-plan-timeline-time">
                                     {new Date(p.created_at).toLocaleString()}
@@ -945,5 +979,46 @@ export default function QANPage() {
         </div>
       </div>
     </AppLayout>
+
+      {/* ── Plan Fullscreen Modal ── */}
+      {planFullscreen && (
+        <div className="qan-plan-fullscreen-overlay" onClick={(e) => { if (e.target === e.currentTarget) setPlanFullscreen(null); }}>
+          <div className="qan-plan-fullscreen-bar">
+            <div className="qan-plan-fullscreen-title">
+              <span className="material-symbols-outlined">account_tree</span>
+              <span>{t("qan.plan_fullscreen_title")}</span>
+            </div>
+            <div className="qan-plan-fullscreen-actions">
+              <button className="qan-plan-fullscreen-btn" onClick={() => setPlanFullscreen(null)}>
+                <span className="material-symbols-outlined">close_fullscreen</span>
+                {t("qan.plan_fullscreen_close")}
+              </button>
+            </div>
+          </div>
+
+          {planFullscreen.title && (
+            <div style={{ padding: "8px 20px 0", flexShrink: 0 }}>
+              <pre
+                style={{
+                  margin: 0, padding: "8px 12px",
+                  background: "#0f1a2e", borderRadius: 6,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: 13, color: "#e2e8f0",
+                  whiteSpace: "pre-wrap", wordBreak: "break-all",
+                  maxHeight: 120, overflow: "auto",
+                }}
+              >{planFullscreen.title}</pre>
+            </div>
+          )}
+
+          <div className="qan-plan-fullscreen-body">
+            <div className="qan-plan-tree" style={{ maxHeight: "none", fontSize: 14, padding: "20px 24px" }}>
+              <PlanNode data={planFullscreen.plan_json} depth={0} />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

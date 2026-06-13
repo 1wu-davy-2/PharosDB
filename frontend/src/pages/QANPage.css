@@ -704,20 +704,22 @@
 }
 .qan-plan-collect-sql {
   width: 100%;
-  min-height: 80px;
-  padding: 8px 10px;
+  min-height: 160px;
+  padding: 10px 12px;
   font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
+  font-size: 13px;
   border: 1px solid var(--color-border);
   border-radius: 5px;
   background: #0f1a2e;
   color: #e2e8f0;
   resize: vertical;
   box-sizing: border-box;
+  line-height: 1.6;
 }
 .qan-plan-collect-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: 8px;
 }
 .qan-plan-collect-submit {
@@ -732,6 +734,90 @@
   font-family: inherit;
 }
 .qan-plan-collect-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.qan-plan-collect-submit--outline {
+  background: transparent;
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+}
+.qan-plan-collect-submit--outline:hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+/* ─── Plan Fullscreen Modal ─── */
+.qan-plan-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  animation: qan-fs-fade-in 0.2s ease-out;
+}
+@keyframes qan-fs-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.qan-plan-fullscreen-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.qan-plan-fullscreen-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qan-plan-fullscreen-title .material-symbols-outlined {
+  font-size: 22px;
+  color: var(--color-accent);
+}
+
+.qan-plan-fullscreen-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.qan-plan-fullscreen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #d1d5db;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.qan-plan-fullscreen-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.qan-plan-fullscreen-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.qan-plan-fullscreen-body {
+  flex: 1;
+  overflow: auto;
+  padding: 20px 24px;
+}
 
 /* ─── 索引建议 ─── */
 .qan-index-list {

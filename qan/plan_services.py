@@ -21,58 +21,64 @@ def _get_client():
     )
 
 
+_JSON_COLUMNS = {"plan_json", "plan_summary"}
+
+
 def _row_to_dict(columns, row):
+    """Raw ClickHouse row → dict, auto-parsing JSON columns."""
     d = {}
     for i, col in enumerate(columns):
         val = row[i]
         if hasattr(val, "isoformat"):
             val = val.isoformat()
+        if col in _JSON_COLUMNS and isinstance(val, str):
+            try:
+                val = json.loads(val)
+            except (json.JSONDecodeError, TypeError):
+                pass  # keep as string if unparseable
         d[col] = val
     return d
 
 
-def get_plan_list(fingerprint, service_name=None, limit=50):
-    """某 fingerprint 的所有历史计划，按时间倒序。
+_PLAN_LIST_COLS = [
+    "plan_id", "fingerprint", "service_name", "schema",
+    "plan_json", "plan_summary", "plan_hash", "query_example",
+    "created_at", "instance_id",
+]
+_COL_CSV = ", ".join(_PLAN_LIST_COLS)
 
-    fingerprint 支持精确匹配和前缀匹配（自动添加 % 通配符）。
+
+def get_plan_list(fingerprint, service_name=None, limit=50):
+    """某 fingerprint 的所有历史计划（含完整 JSON），按时间倒序。
+
+    fingerprint 支持精确匹配和 LIKE 前缀匹配。
+    返回结果包含 plan_json / plan_summary，前端可直接渲染树形结构。
     """
     client = _get_client()
-    params = {"limit": limit}
-
-    # 精确匹配优先（fingerprint 有时包含完整文本），
-    # 同时支持 LIKE 前缀搜索（给前端调用更宽松）
-    fp_cond = "fingerprint = %(fp)s"
-    params["fp"] = fingerprint
-    # 先用精确匹配，找不到再 LIKE
-    rows = _try_query(client, fingerprint, params, exact=True)
+    rows = _try_query(client, fingerprint, limit=limit, exact=True)
     if not rows:
-        rows = _try_query(client, fingerprint, params, exact=False)
+        rows = _try_query(client, fingerprint, limit=limit, exact=False)
 
     if service_name:
         rows = [r for r in rows if r[2] == service_name]
 
     rows = rows[:limit]
-
-    cols = ["plan_id", "fingerprint", "service_name", "schema",
-            "plan_hash", "query_example", "created_at", "instance_id"]
-    return [_row_to_dict(cols, r) for r in rows]
+    return [_row_to_dict(_PLAN_LIST_COLS, r) for r in rows]
 
 
-def _try_query(client, fingerprint, params, exact=True):
+def _try_query(client, fingerprint, limit=50, exact=True):
+    params = {"fp": fingerprint, "limit": limit}
+
     if exact:
         sql = (
-            "SELECT plan_id, fingerprint, service_name, schema, "
-            "plan_hash, query_example, created_at, instance_id "
-            "FROM pharos_db.execution_plans "
+            f"SELECT {_COL_CSV} FROM pharos_db.execution_plans "
             "WHERE fingerprint = %(fp)s "
             "ORDER BY created_at DESC LIMIT %(limit)s"
         )
     else:
-        params = {**params, "fp_like": fingerprint + "%"}
+        params["fp_like"] = fingerprint + "%"
         sql = (
-            "SELECT plan_id, fingerprint, service_name, schema, "
-            "plan_hash, query_example, created_at, instance_id "
-            "FROM pharos_db.execution_plans "
+            f"SELECT {_COL_CSV} FROM pharos_db.execution_plans "
             "WHERE fingerprint LIKE %(fp_like)s "
             "ORDER BY created_at DESC LIMIT %(limit)s"
         )
@@ -80,27 +86,19 @@ def _try_query(client, fingerprint, params, exact=True):
         return client.execute(sql, params)
     except Exception:
         return []
-    cols = ["plan_id", "fingerprint", "service_name", "schema",
-            "plan_hash", "query_example", "created_at", "instance_id"]
-    return [_row_to_dict(cols, r) for r in rows]
 
 
 def get_plan_detail(plan_id):
-    """单个计划的完整 JSON。"""
+    """单个计划的完整 JSON（plan_json / plan_summary 已解析为 dict）。"""
     client = _get_client()
     sql = (
-        "SELECT plan_id, fingerprint, service_name, schema, "
-        "plan_json, plan_summary, plan_hash, query_example, "
-        "created_at, instance_id "
-        "FROM pharos_db.execution_plans WHERE plan_id = %(pid)s"
+        f"SELECT {_COL_CSV} FROM pharos_db.execution_plans "
+        "WHERE plan_id = %(pid)s"
     )
     rows = client.execute(sql, {"pid": plan_id})
     if not rows:
         return None
-    cols = ["plan_id", "fingerprint", "service_name", "schema",
-            "plan_json", "plan_summary", "plan_hash", "query_example",
-            "created_at", "instance_id"]
-    return _row_to_dict(cols, rows[0])
+    return _row_to_dict(_PLAN_LIST_COLS, rows[0])
 
 
 def compare_plans(plan_id_a, plan_id_b):
@@ -110,12 +108,22 @@ def compare_plans(plan_id_a, plan_id_b):
     if not plan_a or not plan_b:
         return None
 
-    try:
-        summary_a = json.loads(plan_a["plan_summary"])
-        summary_b = json.loads(plan_b["plan_summary"])
-    except (json.JSONDecodeError, TypeError):
-        return {"plan_a": plan_a, "plan_b": plan_b,
-                "diff": [], "error": "plan_summary 解析失败"}
+    summary_a = plan_a.get("plan_summary", {})
+    summary_b = plan_b.get("plan_summary", {})
+
+    # _row_to_dict 已解析 JSON 列；兜底处理 string 情况
+    if isinstance(summary_a, str):
+        try:
+            summary_a = json.loads(summary_a)
+        except (json.JSONDecodeError, TypeError):
+            return {"plan_a": plan_a, "plan_b": plan_b,
+                    "diff": [], "error": "plan_summary 解析失败"}
+    if isinstance(summary_b, str):
+        try:
+            summary_b = json.loads(summary_b)
+        except (json.JSONDecodeError, TypeError):
+            return {"plan_a": plan_a, "plan_b": plan_b,
+                    "diff": [], "error": "plan_summary 解析失败"}
 
     diffs = _compute_diff(summary_a, summary_b)
     return {"plan_a": plan_a, "plan_b": plan_b, "diff": diffs}
@@ -171,8 +179,13 @@ def _compute_diff(node_a, node_b, path="$"):
 
 
 def _classify(field, old_val, new_val):
-    """判断变化类型：optimized / degraded / modified。"""
+    """判断变化类型：optimized / degraded / modified。
+
+    一方为 None（旧采集器未提取到该字段）时不判为优化/退化，仅标记 modified。
+    """
     if field == "access_type":
+        if old_val is None or new_val is None:
+            return "modified"
         or_ = _ACCESS_RANK.get(str(old_val), 99)
         nr = _ACCESS_RANK.get(str(new_val), 99)
         return "optimized" if nr < or_ else ("degraded" if nr > or_ else "modified")

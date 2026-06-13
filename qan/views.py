@@ -150,20 +150,31 @@ class ManualExplainView(APIView):
         except DatabaseInstance.DoesNotExist:
             return Response({"error": f"实例 {service} 不存在"}, status=404)
 
-        password = decrypt(inst.password)
+        try:
+            password = decrypt(inst.password)
+        except Exception as e:
+            return Response(
+                {"error": f"密码解密失败: {e}. 请检查 FERNET_KEY 配置或重新保存实例密码。"},
+                status=500,
+            )
 
-        if inst.db_type == "mysql":
-            return self._explain_mysql(inst, password, sql_text, digest)
-        elif inst.db_type == "postgresql":
-            return self._explain_postgresql(inst, password, sql_text)
-        return Response(
-            {"error": f"不支持的数据库类型: {inst.db_type}"},
-            status=400,
-        )
+        try:
+            if inst.db_type == "mysql":
+                return self._explain_mysql(inst, password, sql_text, digest)
+            elif inst.db_type == "postgresql":
+                return self._explain_postgresql(inst, password, sql_text)
+            return Response(
+                {"error": f"不支持的数据库类型: {inst.db_type}"},
+                status=400,
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
     def _explain_mysql(self, inst, password, sql_text, digest):
         import pymysql
 
+        conn = None
+        cur = None
         try:
             conn = pymysql.connect(
                 host=inst.host, port=inst.port,
@@ -187,6 +198,8 @@ class ManualExplainView(APIView):
                 if row:
                     sql_text = row.get("SQL_TEXT", "")[:8192]
                 if not sql_text:
+                    cur.close()
+                    conn.close()
                     return Response({"error": "history_long 中未找到该 digest 的 SQL"}, status=404)
 
             # 执行 EXPLAIN
@@ -217,11 +230,16 @@ class ManualExplainView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
         finally:
-            cur.close()
-            conn.close()
+            if cur is not None:
+                cur.close()
+            if conn is not None:
+                conn.close()
 
     def _explain_postgresql(self, inst, password, sql_text):
         import psycopg2
+
+        conn = None
+        cur = None
         try:
             conn = psycopg2.connect(
                 host=inst.host, port=inst.port,
@@ -239,5 +257,7 @@ class ManualExplainView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
         finally:
-            cur.close()
-            conn.close()
+            if cur is not None:
+                cur.close()
+            if conn is not None:
+                conn.close()

@@ -35,6 +35,19 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // ── 403 IP mismatch → force re-login (token refresh won't help) ──
+    if (
+      error.response?.status === 403 &&
+      typeof error.response?.data?.detail === "string" &&
+      error.response.data.detail.includes("IP")
+    ) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("pharos_ips");
+      window.location.href = "/login";
+      return Promise.reject(error);
+    }
+
     // Only attempt refresh on 401 and not already retried
     if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(error);
@@ -74,6 +87,7 @@ api.interceptors.response.use(
       processQueue(refreshError, null);
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
+      localStorage.removeItem("pharos_ips");
       window.location.href = "/login";
       return Promise.reject(refreshError);
     } finally {
