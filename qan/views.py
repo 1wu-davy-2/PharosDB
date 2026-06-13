@@ -54,6 +54,21 @@ class QueryTrendView(APIView):
         return Response({"queryid": queryid, "service": service, "trend": trend})
 
 
+class IndexAnalysisView(APIView):
+    """GET /api/qan/index-analysis/?service=xxx
+
+    返回未使用索引 + 缺失索引推荐列表。
+    """
+
+    def get(self, request):
+        service = request.query_params.get("service")
+        if not service:
+            return Response({"error": "请指定 ?service= 参数"}, status=400)
+
+        result = services.index_analysis(service)
+        return Response(result)
+
+
 class OverviewView(APIView):
     """GET /api/qan/overview/?service=xxx&period=1h"""
 

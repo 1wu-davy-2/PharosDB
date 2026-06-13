@@ -308,3 +308,80 @@ def get_service_list():
         "SELECT DISTINCT service_name FROM pharos_db.metrics ORDER BY service_name"
     )
     return [row[0] for row in rows]
+
+
+def index_analysis(service_name: str):
+    """索引分析 — 未使用索引 + 缺失索引推荐。"""
+    client = _get_client()
+
+    # 1. 未使用索引：最近一次快照中 count_read=0 的索引
+    unused = []
+    try:
+        rows, _cols = client.execute(
+            """
+            SELECT
+                object_schema,
+                object_name,
+                index_name,
+                count_read,
+                count_write,
+                count_fetch,
+                sum_timer_read,
+                sum_timer_write
+            FROM pharos_db.index_usage
+            WHERE service_name = %(svc)s
+              AND collected_at = (
+                  SELECT max(collected_at)
+                  FROM pharos_db.index_usage
+                  WHERE service_name = %(svc)s
+              )
+              AND index_name != ''
+              AND count_read = 0
+            ORDER BY count_write DESC
+            LIMIT 50
+            """,
+            {"svc": service_name},
+            with_column_types=True,
+        )
+        cols = [c[0] for c in _cols]
+        unused = [dict(zip(cols, r)) for r in rows]
+    except Exception:
+        pass
+
+    # 2. 缺失索引：EXPLAIN 中 access_type=ALL 的查询
+    missing = []
+    try:
+        rows, _cols = client.execute(
+            """
+            SELECT
+                fingerprint,
+                schema,
+                query_example,
+                plan_hash,
+                created_at,
+                JSONExtractString(plan_summary, 'access_type') AS access_type,
+                JSONExtractString(plan_summary, 'key')          AS idx_key,
+                JSONExtractString(plan_summary, 'table_name')   AS tbl,
+                JSONExtractString(plan_summary, 'possible_keys') AS possible_keys
+            FROM pharos_db.execution_plans
+            WHERE service_name = %(svc)s
+              AND JSONExtractString(plan_summary, 'access_type') = 'ALL'
+            ORDER BY created_at DESC
+            LIMIT 20
+            """,
+            {"svc": service_name},
+            with_column_types=True,
+        )
+        cols = [c[0] for c in _cols]
+        missing = [dict(zip(cols, r)) for r in rows]
+    except Exception:
+        pass
+
+    return {
+        "unused_indexes": unused,
+        "missing_indexes": missing,
+        "summary": {
+            "unused_count": len(unused),
+            "missing_count": len(missing),
+        },
+    }

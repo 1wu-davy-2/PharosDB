@@ -17,7 +17,7 @@ def connect_signals():
 
 @receiver(post_save, sender="collector.DatabaseInstance")
 def on_instance_save(sender, instance, **kwargs):
-    from .scheduler import lock_registry, registry
+    from .scheduler import index_registry, lock_registry, registry
 
     registry.update_instance(
         instance_id=instance.id,
@@ -28,13 +28,16 @@ def on_instance_save(sender, instance, **kwargs):
 
     if instance.db_type == "mysql" and instance.is_active and instance.connection_status == "connected":
         lock_registry.start_instance(instance.id)
+        index_registry.start_instance(instance.id)
     else:
         lock_registry.stop_instance(instance.id)
+        index_registry.stop_instance(instance.id)
 
 
 @receiver(post_delete, sender="collector.DatabaseInstance")
 def on_instance_delete(sender, instance, **kwargs):
-    from .scheduler import dead_registry, lock_registry, registry
+    from .scheduler import dead_registry, index_registry, lock_registry, registry
     registry.stop_instance(instance.id)
     lock_registry.stop_instance(instance.id)
+    index_registry.stop_instance(instance.id)
     dead_registry.stop_instance(instance.id)

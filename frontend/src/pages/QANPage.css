@@ -733,6 +733,39 @@
 }
 .qan-plan-collect-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ─── 索引建议 ─── */
+.qan-index-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.qan-index-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+}
+.qan-index-card--warn {
+  background: rgba(245, 158, 11, 0.05);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+.qan-index-card--info {
+  background: rgba(59, 130, 246, 0.05);
+  border-color: rgba(59, 130, 246, 0.15);
+}
+.qan-index-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+.qan-index-detail {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
 /* ═══ 优化建议 ═════════════════════════════════════ */
 .qan-suggest-card {
   display: flex;

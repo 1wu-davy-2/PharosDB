@@ -9,6 +9,7 @@ const DRAWER_TABS = [
   { key: "overview", i18n: "qan.tab_overview" },
   { key: "trend", i18n: "qan.tab_trend" },
   { key: "plan", i18n: "qan.tab_plan" },
+  { key: "indexes", i18n: "qan.tab_indexes" },
   { key: "suggestions", i18n: "qan.tab_suggestions" },
 ];
 
@@ -182,6 +183,10 @@ export default function QANPage() {
   const [compareLoading, setCompareLoading] = useState(false);
   const [planDetailCache, setPlanDetailCache] = useState({});
 
+  // index analysis
+  const [indexAnalysis, setIndexAnalysis] = useState(null);
+  const [indexLoading, setIndexLoading] = useState(false);
+
   // manual explain
   const [explainSql, setExplainSql] = useState("");
   const [explainLoading, setExplainLoading] = useState(false);
@@ -288,6 +293,17 @@ export default function QANPage() {
       setPlanDetailCache((c) => ({ ...c, [planId]: data }));
       setSelectedPlanId(planId);
     } catch {}
+  };
+
+  const fetchIndexAnalysis = async () => {
+    if (!selectedService || indexAnalysis) return;
+    setIndexLoading(true);
+    try {
+      const { data } = await api.get(`/qan/index-analysis/?service=${encodeURIComponent(selectedService)}`);
+      setIndexAnalysis(data);
+    } catch { setIndexAnalysis(null); } finally {
+      setIndexLoading(false);
+    }
   };
 
   const handleCompare = async () => {
@@ -550,6 +566,7 @@ export default function QANPage() {
               onClick={() => {
                 setDrawerTab(tab.key);
                 if (tab.key === "plan" && detail && plans.length === 0) loadPlans(detail.fingerprint);
+                if (tab.key === "indexes") fetchIndexAnalysis();
               }}
             >
               {t(tab.i18n)}
@@ -818,6 +835,83 @@ export default function QANPage() {
                     </>
                   )}
                 </>
+              )}
+
+              {/* Tab: 索引建议 */}
+              {drawerTab === "indexes" && (
+                <div className="qan-detail-section">
+                  {indexLoading ? (
+                    <div className="loading-wrap"><div className="mini-spinner" /> {t("common.loading")}</div>
+                  ) : indexAnalysis ? (
+                    <>
+                      <div className="qan-detail-label">
+                        {t("qan.index_unused_title", { count: indexAnalysis.summary.unused_count })}
+                      </div>
+                      {indexAnalysis.unused_indexes.length > 0 ? (
+                        <div className="qan-index-list">
+                          {indexAnalysis.unused_indexes.map((ix, i) => (
+                            <div key={i} className={`qan-index-card ${ix.count_write > 0 ? "qan-index-card--warn" : "qan-index-card--info"}`}>
+                              <span className="material-symbols-outlined qan-suggest-icon">
+                                {ix.count_write > 0 ? "warning" : "info"}
+                              </span>
+                              <div className="qan-suggest-body">
+                                <span className="qan-index-name">
+                                  {ix.object_schema}.{ix.object_name}.<strong>{ix.index_name}</strong>
+                                </span>
+                                <span className="qan-index-detail">
+                                  {t("qan.index_read")}: {ix.count_read} &middot; {t("qan.index_write")}: {fmtNum(ix.count_write)}
+                                  {ix.count_write > 0 ? ` — ${t("qan.index_unused_write_hint")}` : ` — ${t("qan.index_unused_hint")}`}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="empty-state" style={{ padding: 12 }}>
+                          <span className="empty-state-title" style={{ fontSize: 13, color: "var(--color-success)" }}>
+                            {t("qan.index_all_used")}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="qan-detail-label" style={{ marginTop: 16 }}>
+                        {t("qan.index_missing_title", { count: indexAnalysis.summary.missing_count })}
+                      </div>
+                      {indexAnalysis.missing_indexes.length > 0 ? (
+                        <div className="qan-index-list">
+                          {indexAnalysis.missing_indexes.map((ix, i) => (
+                            <div key={i} className="qan-index-card qan-index-card--warn">
+                              <span className="material-symbols-outlined qan-suggest-icon">search_off</span>
+                              <div className="qan-suggest-body">
+                                <span className="qan-index-name" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11 }}>
+                                  {ix.fingerprint?.substring(0, 80)}...
+                                </span>
+                                <span className="qan-index-detail">
+                                  {t("qan.index_missing_detail", {
+                                    access: ix.access_type,
+                                    tbl: ix.tbl,
+                                    keys: ix.possible_keys || "—",
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="empty-state" style={{ padding: 12 }}>
+                          <span className="empty-state-title" style={{ fontSize: 13, color: "var(--color-success)" }}>
+                            {t("qan.index_all_covered")}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="empty-state" style={{ padding: 24 }}>
+                      <span className="material-symbols-outlined empty-state-icon">dataset_linked</span>
+                      <div className="empty-state-title">{t("qan.index_load_hint")}</div>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Tab: 优化建议 */}

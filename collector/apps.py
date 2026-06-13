@@ -36,6 +36,7 @@ class CollectorConfig(AppConfig):
             logger.error(f"[boot] 检查数据库表失败，调度器未启动: {e}")
             return
 
-        from .scheduler import lock_registry, registry
+        from .scheduler import index_registry, lock_registry, registry
         registry.load_from_db()
         lock_registry.load_from_db()
+        index_registry.load_from_db()

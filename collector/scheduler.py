@@ -300,6 +300,106 @@ class LockSchedulerRegistry:
 
 
 # ═══════════════════════════════════════════════════════════════
+# 索引使用采集（15min 间隔）
+# ═══════════════════════════════════════════════════════════════
+
+class IndexUsageScheduler:
+    """单实例索引使用统计采集调度器。"""
+
+    def __init__(self, instance_id: int):
+        self.instance_id = instance_id
+        self._timer = None
+        self._stopped = False
+        from .collectors.index_usage import INTERVAL
+        self.interval = INTERVAL
+
+    def start(self):
+        self._stopped = False
+        self._schedule_next()
+
+    def stop(self):
+        self._stopped = True
+        if self._timer:
+            self._timer.cancel()
+            self._timer = None
+
+    def _schedule_next(self, run_start: float | None = None):
+        if self._stopped:
+            return
+        import time
+
+        if run_start is not None:
+            elapsed = time.time() - run_start
+            delay = max(0, self.interval - elapsed)
+        else:
+            delay = self.interval
+        self._timer = threading.Timer(delay, self._run)
+        self._timer.daemon = True
+        self._timer.start()
+
+    def _run(self):
+        if self._stopped:
+            return
+        import time
+        run_start = time.time()
+        try:
+            from .models import DatabaseInstance
+            try:
+                instance = DatabaseInstance.objects.get(pk=self.instance_id)
+            except DatabaseInstance.DoesNotExist:
+                self.stop()
+                return
+
+            if not instance.is_active or instance.db_type != "mysql":
+                self._schedule_next(run_start=run_start)
+                return
+            if instance.connection_status != "connected":
+                self._schedule_next(run_start=run_start)
+                return
+
+            from .collectors.index_usage import IndexUsageCollector
+            IndexUsageCollector(instance).collect()
+        except Exception as e:
+            logger.error(f"[IndexUsageScheduler] 实例 {self.instance_id} 异常: {e}")
+        finally:
+            self._schedule_next(run_start=run_start)
+
+
+class IndexUsageRegistry:
+    """全局索引使用采集调度器注册表。"""
+
+    def __init__(self):
+        self._schedulers: dict[int, IndexUsageScheduler] = {}
+        self._lock = threading.Lock()
+
+    def start_instance(self, instance_id: int):
+        with self._lock:
+            if instance_id in self._schedulers:
+                self._schedulers[instance_id].stop()
+            sched = IndexUsageScheduler(instance_id)
+            self._schedulers[instance_id] = sched
+        sched.start()
+
+    def stop_instance(self, instance_id: int):
+        with self._lock:
+            sched = self._schedulers.pop(instance_id, None)
+        if sched:
+            sched.stop()
+
+    def load_from_db(self):
+        try:
+            from .models import DatabaseInstance
+            instances = DatabaseInstance.objects.filter(
+                is_active=True, db_type="mysql", connection_status="connected",
+            )
+            for inst in instances:
+                self.start_instance(inst.id)
+            logger.info(f"[IndexUsage] 从数据库恢复 {instances.count()} 个实例的索引采集调度")
+        except Exception as e:
+            logger.error(f"[IndexUsage] 恢复索引采集调度失败: {e}")
+
+
+# ═══════════════════════════════════════════════════════════════
 # 死亡队列（连接失败的实例，5min 重试）
 # ═══════════════════════════════════════════════════════════════
 
@@ -430,4 +530,5 @@ class DeadQueueRegistry:
 
 registry = SchedulerRegistry()
 lock_registry = LockSchedulerRegistry()
+index_registry = IndexUsageRegistry()
 dead_registry = DeadQueueRegistry()

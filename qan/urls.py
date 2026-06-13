@@ -9,6 +9,8 @@ urlpatterns = [
     path("overview/", views.OverviewView.as_view(), name="overview"),
     path("query/<str:queryid>/", views.QueryDetailView.as_view(), name="query_detail"),
     path("query/<str:queryid>/trend/", views.QueryTrendView.as_view(), name="query_trend"),
+    # 索引分析
+    path("index-analysis/", views.IndexAnalysisView.as_view(), name="index_analysis"),
     # 执行计划
     path("plans/", views.PlanListView.as_view(), name="plan_list"),
     path("plans/compare/", views.PlanCompareView.as_view(), name="plan_compare"),

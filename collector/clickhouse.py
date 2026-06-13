@@ -121,6 +121,14 @@ LOCK_WAITS_COLUMNS = [
 ]
 
 
+INDEX_USAGE_COLUMNS = [
+    "service_name", "collected_at",
+    "object_schema", "object_name", "index_name",
+    "count_read", "count_write", "count_fetch",
+    "sum_timer_read", "sum_timer_write",
+]
+
+
 class ClickHouseWriter:
     """ClickHouse 批量写入单例。"""
 
@@ -221,6 +229,23 @@ class ClickHouseWriter:
             return len(data)
         except Exception as e:
             logger.error(f"ClickHouse execution_plans 写入失败: {e}")
+            raise
+
+    def write_index_usage(self, rows: list[dict]) -> int:
+        """批量写入 index_usage 表。"""
+        if not rows:
+            return 0
+        client = self._get_client()
+        columns = INDEX_USAGE_COLUMNS
+        data = [[row.get(col) for col in columns] for row in rows]
+        cols_str = ", ".join(f"`{c}`" for c in columns)
+        sql = f"INSERT INTO pharos_db.index_usage ({cols_str}) VALUES"
+        try:
+            client.execute(sql, data)
+            logger.info(f"写入 {len(data)} 行到 ClickHouse index_usage 表")
+            return len(data)
+        except Exception as e:
+            logger.error(f"ClickHouse index_usage 写入失败: {e}")
             raise
 
 
