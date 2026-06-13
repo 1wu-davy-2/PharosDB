@@ -59,6 +59,9 @@ LIMIT 1
 TOP_N_EXPLAIN = 5       # 每个采集周期对 top-5 慢查询执行 EXPLAIN
 EXPLAIN_TIMEOUT = 3      # EXPLAIN 最大允许秒数
 
+# 排除系统库 — 避免采集器自己的查询被 EXPLAIN
+_EXCLUDED_SCHEMAS = frozenset({"performance_schema", "information_schema", "mysql", "sys"})
+
 _CONTAINER_KEYS = frozenset({
     "nested_loop", "ordering_operation", "grouping_operation",
     "duplicates_removal", "windowing",
@@ -194,6 +197,9 @@ class MySQLCollector(BaseCollector):
         for q in top_queries:
             fingerprint = (q.get("fingerprint") or "").strip().upper()
             if not fingerprint.startswith(("SELECT", "INSERT", "UPDATE", "DELETE", "REPLACE")):
+                continue
+            schema_name = (q.get("schema") or "").lower()
+            if schema_name in self._EXCLUDED_SCHEMAS:
                 continue
             if self._maybe_collect_explain(q, cur):
                 explain_count += 1
@@ -650,7 +656,7 @@ class MySQLCollector(BaseCollector):
         try:
             from ..clickhouse import get_writer
             writer = get_writer()
-            rows = writer.execute(
+            rows, _cols = writer.execute(
                 "SELECT plan_hash FROM pharos_db.execution_plans "
                 "WHERE fingerprint = %(fp)s AND service_name = %(svc)s "
                 "ORDER BY created_at DESC LIMIT 1",
