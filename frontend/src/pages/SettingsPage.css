@@ -7,6 +7,50 @@
   max-width: 860px;
 }
 
+/* ── Tab bar ── */
+.settings-tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.settings-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.settings-tab:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.settings-tab--active {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.settings-tab--active:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
+
 /* ── Top bar ── */
 .settings-topbar {
   display: flex;
@@ -169,6 +213,35 @@
 .settings-input:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ── Secret input (password field with eye toggle) ── */
+.settings-secret-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.settings-secret-wrap .settings-input {
+  padding-right: 38px;
+}
+
+.settings-secret-eye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  transition: color 0.15s;
+}
+
+.settings-secret-eye:hover {
+  color: var(--color-text);
 }
 
 .settings-row-desc {

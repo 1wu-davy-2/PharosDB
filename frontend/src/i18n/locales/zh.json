@@ -34,10 +34,28 @@
   },
   "dashboard": {
     "title": "监控总览",
+    "health_score": "健康指数",
     "health_overview": "数据库健康概览",
-    "recent_alerts": "最近告警",
+    "active_instances": "活跃实例",
+    "active_alerts": "活跃告警",
+    "avg_latency": "平均延迟",
+    "unique_queries": "唯一查询",
+    "recent_alerts": "实时告警流",
     "top_slow": "Top 10 慢查询",
-    "view_all": "查看全部"
+    "view_all": "查看全部",
+    "instance_all": "全部实例",
+    "instance_health": "实例健康状态",
+    "auto_refresh": "自动刷新",
+    "radar_title": "Pharos 锁扫描雷达",
+    "radar_idle": "无锁等待",
+    "radar_active": "{{count}} 个活跃锁",
+    "radar_deadlock": "死锁检测",
+    "no_locks": "当前无锁等待",
+    "no_locks_desc": "所有实例均无活跃的行锁竞争",
+    "no_alerts": "当前无活跃告警",
+    "online": "在线",
+    "offline": "离线",
+    "deadlock_detected": "死锁告警"
   },
   "instances": {
     "title": "实例管理",
@@ -247,7 +265,10 @@
     "save_success": "保存成功，参数已即时生效",
     "save_failed": "保存失败，请重试",
     "load_failed": "加载配置失败",
-    "no_changes": "没有变更需要保存"
+    "no_changes": "没有变更需要保存",
+    "empty_tab": "该分类暂无配置项",
+    "tab_system": "系统设置",
+    "tab_notification": "推送配置"
   },
   "locks": {
     "title": "锁分析",

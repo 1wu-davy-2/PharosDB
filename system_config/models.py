@@ -26,6 +26,7 @@ class SystemConfig(models.Model):
     category = models.CharField("分类", max_length=64, default="general")
     display_name = models.CharField("显示名称", max_length=128, blank=True, default="")
     editable = models.BooleanField("允许前端修改", default=True)
+    is_secret = models.BooleanField("敏感字段", default=False)
     updated_at = models.DateTimeField("更新时间", auto_now=True)
     created_at = models.DateTimeField("创建时间", auto_now_add=True)
 

@@ -34,10 +34,28 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "health_score": "Health Score",
     "health_overview": "Database Health Overview",
-    "recent_alerts": "Recent Alerts",
+    "active_instances": "Active Instances",
+    "active_alerts": "Active Alerts",
+    "avg_latency": "Avg Latency",
+    "unique_queries": "Unique Queries",
+    "recent_alerts": "Alert Stream",
     "top_slow": "Top 10 Slow Queries",
-    "view_all": "View All"
+    "view_all": "View All",
+    "instance_all": "All Instances",
+    "instance_health": "Instance Health",
+    "auto_refresh": "Auto Refresh",
+    "radar_title": "Pharos Lock Radar",
+    "radar_idle": "No Locks",
+    "radar_active": "{{count}} Active Locks",
+    "radar_deadlock": "DEADLOCK",
+    "no_locks": "No Active Lock Waits",
+    "no_locks_desc": "All instances are free of row lock contention",
+    "no_alerts": "No Active Alerts",
+    "online": "Online",
+    "offline": "Offline",
+    "deadlock_detected": "DEADLOCK DETECTED"
   },
   "instances": {
     "title": "Instance Management",
@@ -247,7 +265,10 @@
     "save_success": "Saved — parameters applied immediately",
     "save_failed": "Save failed, please retry",
     "load_failed": "Failed to load settings",
-    "no_changes": "No changes to save"
+    "no_changes": "No changes to save",
+    "empty_tab": "No config items in this category",
+    "tab_system": "System Settings",
+    "tab_notification": "Notifications"
   },
   "locks": {
     "title": "Lock Analysis",

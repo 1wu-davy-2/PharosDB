@@ -37,6 +37,7 @@ class ConfigView(views.APIView):
                 "description": c.description,
                 "category": c.category,
                 "editable": c.editable,
+                "is_secret": c.is_secret,
             }
             for c in qs
         ]
