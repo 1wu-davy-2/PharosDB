@@ -258,6 +258,35 @@ body {
 .st-warning { background: rgba(217,119,6,.15); color: var(--amber); }
 .st-resolved { background: rgba(22,163,74,.12); color: var(--green); }
 
+/* ═══ DEMO: Index Analysis Cards ═══ */
+.demo-idx-stack { display: flex; flex-direction: column; gap: 8px; }
+.demo-idx-card {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  border-radius: var(--radius-sm); font-size: 12px;
+  border: 1px solid rgba(255,255,255,.06); transition: transform .2s;
+}
+.demo-idx-card:hover { transform: translateX(4px); }
+.demo-idx-card.warn {
+  background: rgba(217,119,6,.07); border-left: 3px solid var(--amber);
+}
+.demo-idx-card.info {
+  background: rgba(37,99,235,.06); border-left: 3px solid var(--blue);
+}
+.demo-idx-card.missing {
+  background: rgba(220,38,38,.07); border-left: 3px solid var(--red);
+}
+.demo-idx-icon { font-size: 16px; min-width: 20px; text-align: center; }
+.demo-idx-info { flex: 1; min-width: 0; }
+.demo-idx-name { font-weight: 600; font-size: 12px; color: var(--text); margin-bottom: 2px; }
+.demo-idx-meta { font-size: 11px; color: var(--text-muted); }
+.demo-idx-tag {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+}
+.warn-tag { background: rgba(217,119,6,.15); color: var(--amber); }
+.info-tag { background: rgba(37,99,235,.12); color: var(--blue); }
+.missing-tag { background: rgba(220,38,38,.12); color: var(--red); }
+
 /* ═══ DEMO: Webhook JSON ═══ */
 .demo-json {
   background: #0a0f18; border: 1px solid #334155; border-radius: var(--radius-sm);
@@ -349,6 +378,7 @@ body {
       <a href="#qan">QAN</a>
       <a href="#locks">锁拓扑</a>
       <a href="#plans">执行计划</a>
+      <a href="#indexes">索引优化</a>
       <a href="#alerts">告警</a>
       <a href="#architecture">架构</a>
       <a href="https://github.com/1wu-davy-2/PharosDB/tree/main/docs" target="_blank">文档</a>
@@ -683,7 +713,100 @@ body {
 </section>
 
 <!-- ════════════════════════════════════════════════════════
-   FEATURE 4: Alert Center
+   FEATURE 4: Index Analysis
+   ════════════════════════════════════════════════════════ -->
+<section class="sec feat-section" id="indexes">
+  <div class="sec-header fade-in">
+    <div class="eyebrow">Feature Demo</div>
+    <h2>索引优化建议 — 自动检测未使用索引 & 缺失索引</h2>
+    <p>从 performance_schema.table_io_waits_summary_by_index_usage 采集 + EXPLAIN 全表扫描检测</p>
+  </div>
+  <div class="feat-grid reverse fade-in">
+    <div class="feat-text">
+      <span class="tag tag-green">Index Advisor</span>
+      <h3>自动找到"该删的"和"该加的"索引</h3>
+      <p>PMM 和大多数监控工具只告诉你"这条 SQL 慢了"，不告诉你索引哪里有问题。PharosDB 从两个维度做<strong>自动索引诊断</strong>：</p>
+      <ul class="feat-bullets">
+        <li>未使用索引检测 — 从 table_io_waits_summary_by_index_usage 找出 count_read=0 的索引，区分"完全无用"和"只写不读"</li>
+        <li>缺失索引推荐 — 扫描 execution_plans 历史，找出 access_type=ALL 的全表扫描查询，列出 available_keys</li>
+        <li>15 分钟自动采集，去重只写增量</li>
+        <li>两个维度合一页，知道该 DROP 哪个、该 ADD 哪个</li>
+      </ul>
+    </div>
+    <div>
+      <div class="fade-in">
+        <!-- Unused indexes -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">
+            🔍 未使用索引 (3)
+          </div>
+          <div class="demo-idx-stack">
+            <div class="demo-idx-card warn">
+              <span class="demo-idx-icon">⚠</span>
+              <div class="demo-idx-info">
+                <div class="demo-idx-name">shop.orders.<strong>idx_created_at</strong></div>
+                <div class="demo-idx-meta">读 0 · 写 45,230 · <span style="color:var(--amber)">只写不读，浪费 I/O</span></div>
+              </div>
+              <span class="demo-idx-tag warn-tag">建议 DROP</span>
+            </div>
+            <div class="demo-idx-card info">
+              <span class="demo-idx-icon">ℹ</span>
+              <div class="demo-idx-info">
+                <div class="demo-idx-name">shop.inventory.<strong>idx_legacy_status</strong></div>
+                <div class="demo-idx-meta">读 0 · 写 0 · <span style="color:var(--green)">完全未使用</span></div>
+              </div>
+              <span class="demo-idx-tag info-tag">建议 DROP</span>
+            </div>
+            <div class="demo-idx-card warn">
+              <span class="demo-idx-icon">⚠</span>
+              <div class="demo-idx-info">
+                <div class="demo-idx-name">analytics.page_views.<strong>idx_session_ts</strong></div>
+                <div class="demo-idx-meta">读 0 · 写 892,100 · <span style="color:var(--amber)">高频写入，完全无读</span></div>
+              </div>
+              <span class="demo-idx-tag warn-tag">建议 DROP</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Missing indexes -->
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">
+            ❌ 缺失索引 — 全表扫描查询 (2)
+          </div>
+          <div class="demo-idx-stack">
+            <div class="demo-idx-card missing">
+              <span class="demo-idx-icon">🔎</span>
+              <div class="demo-idx-info">
+                <div class="demo-idx-name" style="font-family:var(--font-mono);font-size:11px">
+                  SELECT * FROM orders WHERE user_id = ? AND status = ?
+                </div>
+                <div class="demo-idx-meta">
+                  全表扫描 orders · 可用索引: <span style="color:#4ade80">idx_user_status, idx_user_id</span>
+                </div>
+              </div>
+              <span class="demo-idx-tag missing-tag">建议 ADD INDEX</span>
+            </div>
+            <div class="demo-idx-card missing">
+              <span class="demo-idx-icon">🔎</span>
+              <div class="demo-idx-info">
+                <div class="demo-idx-name" style="font-family:var(--font-mono);font-size:11px">
+                  SELECT * FROM audit_log WHERE created_at BETWEEN ? AND ?
+                </div>
+                <div class="demo-idx-meta">
+                  全表扫描 audit_log · <span style="color:#f87171">无可用索引</span>
+                </div>
+              </div>
+              <span class="demo-idx-tag missing-tag">建议 ADD INDEX</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+   FEATURE 5: Alert Center
    ════════════════════════════════════════════════════════ -->
 <section class="sec feat-section" id="alerts">
   <div class="sec-header fade-in">
@@ -753,7 +876,7 @@ body {
 </section>
 
 <!-- ════════════════════════════════════════════════════════
-   FEATURE 5: Agentless Scheduler
+   FEATURE 6: Agentless Scheduler
    ════════════════════════════════════════════════════════ -->
 <section class="sec" id="scheduler">
   <div class="sec-header fade-in">
@@ -800,7 +923,7 @@ body {
 </section>
 
 <!-- ════════════════════════════════════════════════════════
-   FEATURE 6: Architecture
+   FEATURE 7: Architecture
    ════════════════════════════════════════════════════════ -->
 <section class="sec feat-section" id="architecture" style="background: var(--bg);">
   <div class="sec-header fade-in">
@@ -910,6 +1033,7 @@ body {
     <a href="#qan">QAN</a>
     <a href="#locks">锁拓扑</a>
     <a href="#plans">执行计划</a>
+    <a href="#indexes">索引优化</a>
     <a href="#alerts">告警</a>
     <a href="#architecture">架构</a>
     <a href="https://github.com/1wu-davy-2/PharosDB/tree/main/docs" target="_blank">文档</a>
