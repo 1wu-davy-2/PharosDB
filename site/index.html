@@ -7,16 +7,19 @@
 <meta name="description" content="PharosDB 是一款专为打破监控孤岛而生的数据库可观测性平台。Agentless 零侵入，10 分钟接入。">
 <meta name="theme-color" content="#0f172a">
 <style>
+/* ═══════════════════════════════════════════════════════════════
+   BASE & DESIGN TOKENS
+   ═══════════════════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --amber: #d97706; --amber-light: #fbbf24; --amber-bg: rgba(217,119,6,0.08);
   --navy: #0f172a; --navy-light: #1e293b; --surface: #fff; --bg: #f8fafc;
   --text: #1e293b; --text-muted: #64748b; --border: #e2e8f0;
-  --red: #dc2626; --green: #16a34a; --blue: #2563eb;
+  --red: #dc2626; --green: #16a34a; --blue: #2563eb; --orange: #ea580c;
   --shadow: 0 1px 3px rgba(0,0,0,.08); --shadow-lg: 0 10px 30px rgba(0,0,0,.1);
-  --radius: 12px;
-  --font-mono: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  --radius: 12px; --radius-sm: 8px;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', ui-monospace, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root { --bg: #0f172a; --surface: #1e293b; --text: #e2e8f0; --text-muted: #94a3b8; --border: #334155; --shadow: 0 1px 3px rgba(0,0,0,.3); --shadow-lg: 0 10px 30px rgba(0,0,0,.4); --amber-bg: rgba(251,191,36,.1); }
@@ -40,14 +43,13 @@ body {
 }
 .nav-logo { font-size: 18px; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: -.5px; }
 .nav-logo span { color: var(--amber-light); }
-.nav-links { display: flex; align-items: center; gap: 24px; }
+.nav-links { display: flex; align-items: center; gap: 20px; }
 .nav-links a { color: rgba(255,255,255,.7); text-decoration: none; font-size: 13px; font-weight: 500; transition: color .15s; }
 .nav-links a:hover { color: #fff; }
 .nav-star {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,.15);
-  color: var(--amber-light); font-size: 13px; font-weight: 600; text-decoration: none;
-  transition: border-color .15s;
+  color: var(--amber-light); font-size: 13px; font-weight: 600; text-decoration: none; transition: border-color .15s;
 }
 .nav-star:hover { border-color: rgba(255,255,255,.35); }
 .menu-btn { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
@@ -60,7 +62,7 @@ body {
 /* ── Hero ── */
 .hero {
   background: linear-gradient(160deg, #0f172a 0%, #1a2740 40%, #143048 70%, #0f172a 100%);
-  color: #fff; padding: 140px 24px 100px; text-align: center; position: relative; overflow: hidden;
+  color: #fff; padding: 120px 24px 80px; text-align: center; position: relative; overflow: hidden;
 }
 .hero::after {
   content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -73,19 +75,46 @@ body {
 .hero-badge {
   display: inline-block; border: 1px solid rgba(255,255,255,.12);
   border-radius: 20px; padding: 5px 18px; font-size: 13px;
-  color: var(--amber-light); margin-bottom: 28px; letter-spacing: .03em;
+  color: var(--amber-light); margin-bottom: 24px; letter-spacing: .03em;
   background: rgba(255,255,255,.04); backdrop-filter: blur(4px);
 }
 .hero h1 {
   font-size: clamp(34px, 6vw, 58px); font-weight: 800; letter-spacing: -1.5px;
-  margin-bottom: 18px; line-height: 1.2;
+  margin-bottom: 14px; line-height: 1.2;
 }
 .hero .subtitle {
-  font-size: clamp(15px, 2vw, 18px); color: rgba(255,255,255,.6);
-  max-width: 620px; margin: 0 auto 36px; line-height: 1.7;
+  font-size: clamp(14px, 1.8vw, 16px); color: rgba(255,255,255,.55);
+  max-width: 620px; margin: 0 auto 28px; line-height: 1.7;
 }
-.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
 
+/* ── Terminal Demo (Hero) ── */
+.term-wrap {
+  max-width: 620px; margin: 0 auto; text-align: left;
+  background: #0a0f18; border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius);
+  overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.4);
+}
+.term-bar {
+  display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+  background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.term-dot { width: 12px; height: 12px; border-radius: 50%; }
+.term-dot.r { background: #ff5f56; } .term-dot.y { background: #ffbd2e; } .term-dot.g { background: #27ca40; }
+.term-title { flex: 1; text-align: center; font-size: 11px; color: rgba(255,255,255,.3); font-family: var(--font-mono); }
+.term-body {
+  padding: 16px 20px; font-family: var(--font-mono); font-size: 13px; line-height: 1.9;
+  color: #a8c4a0; min-height: 180px; overflow: hidden;
+}
+.term-body .prompt { color: #569cd6; }
+.term-body .cmd { color: #dcdcaa; }
+.term-body .ok { color: #4fc971; }
+.term-body .warn { color: var(--amber-light); }
+.term-body .info { color: #9cdcfe; }
+.term-body .dim { color: rgba(255,255,255,.3); }
+.term-body .cursor { display: inline-block; width: 8px; height: 16px; background: rgba(255,255,255,.7); vertical-align: middle; animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ── Buttons ── */
 .btn {
   display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px;
   border-radius: 8px; font-size: 15px; font-weight: 600; text-decoration: none;
@@ -97,58 +126,183 @@ body {
 .btn-ghost:hover { border-color: rgba(255,255,255,.45); background: rgba(255,255,255,.05); }
 
 /* ── Sections ── */
-.sec { max-width: 1100px; margin: 0 auto; padding: 88px 24px; }
-.sec-header { text-align: center; margin-bottom: 56px; }
-.sec-header h2 { font-size: 28px; font-weight: 700; letter-spacing: -.5px; margin-bottom: 8px; }
+.sec { max-width: 1100px; margin: 0 auto; padding: 80px 24px; }
+.sec-header { text-align: center; margin-bottom: 48px; }
+.sec-header h2 { font-size: 28px; font-weight: 700; letter-spacing: -.5px; margin-bottom: 6px; }
 .sec-header .eyebrow { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--amber); margin-bottom: 8px; }
 .sec-header p { color: var(--text-muted); font-size: 15px; }
 
 /* ── Stats ── */
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 0 24px 40px; max-width: 1100px; margin: 0 auto; margin-top: -40px; position: relative; z-index: 2; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 1100px; margin: -40px auto 0; padding: 0 24px 40px; position: relative; z-index: 2; }
 .stat-card { text-align: center; padding: 28px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
 .stat-num { font-size: 32px; font-weight: 800; color: var(--amber); line-height: 1; margin-bottom: 6px; }
 .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 500; line-height: 1.3; }
 @media (max-width: 600px) { .stats { grid-template-columns: repeat(2, 1fr); } }
 
-/* ── Features ── */
-.feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px,1fr)); gap: 20px; }
-.feat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 24px; transition: box-shadow .2s, transform .2s; }
-.feat-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-.feat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px; }
-.i-a { background: rgba(217,119,6,.1); color: var(--amber); }
-.i-b { background: rgba(37,99,235,.1); color: var(--blue); }
-.i-g { background: rgba(22,163,74,.1); color: var(--green); }
-.i-r { background: rgba(220,38,38,.1); color: var(--red); }
-.feat-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-.feat-card p { color: var(--text-muted); font-size: 13px; line-height: 1.65; }
+/* ── Feature Section Layout ── */
+.feat-section { padding: 64px 0; background: var(--surface); }
+.feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+.feat-grid.reverse { direction: rtl; }
+.feat-grid.reverse > * { direction: ltr; }
+.feat-text h3 { font-size: 22px; font-weight: 700; margin-bottom: 10px; letter-spacing: -.3px; }
+.feat-text .tag { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-bottom: 10px; letter-spacing: .04em; }
+.tag-amber { background: rgba(217,119,6,.12); color: var(--amber); }
+.tag-blue { background: rgba(37,99,235,.12); color: var(--blue); }
+.tag-green { background: rgba(22,163,74,.12); color: var(--green); }
+.tag-red { background: rgba(220,38,38,.12); color: var(--red); }
+.feat-text p { color: var(--text-muted); font-size: 14px; line-height: 1.75; margin-bottom: 12px; }
+.feat-bullets { list-style: none; }
+.feat-bullets li { font-size: 13px; color: var(--text-muted); padding: 3px 0; }
+.feat-bullets li::before { content: "✓ "; color: var(--green); font-weight: 700; }
 
-/* ── Architecture ── */
+@media (max-width: 768px) {
+  .feat-grid { grid-template-columns: 1fr; gap: 24px; }
+  .feat-grid.reverse { direction: ltr; }
+}
+
+/* ═══ DEMO: QAN Table ═══ */
+.demo-qan {
+  background: #0f172a; border: 1px solid #334155; border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow-lg);
+}
+.demo-qan-bar {
+  display: flex; gap: 16px; padding: 10px 16px;
+  background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.06);
+  font-size: 11px; color: rgba(255,255,255,.4); font-weight: 500;
+}
+.demo-qan-bar span.active { color: var(--amber-light); border-bottom: 2px solid var(--amber); padding-bottom: 8px; margin-bottom: -11px; }
+.demo-qan-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.demo-qan-table th {
+  text-align: left; padding: 10px 14px; font-weight: 600; font-size: 11px;
+  color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .04em;
+  border-bottom: 1px solid rgba(255,255,255,.06); white-space: nowrap;
+}
+.demo-qan-table td {
+  padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.03);
+  color: rgba(255,255,255,.75); font-family: var(--font-mono); font-size: 11px;
+  white-space: nowrap;
+}
+.demo-qan-table tr:hover td { background: rgba(255,255,255,.02); }
+.demo-qan-table .fp { color: #9cdcfe; max-width: 280px; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); }
+.demo-qan-table .hot { color: var(--amber-light); font-weight: 700; }
+.demo-qan-table .warn-cell { color: #f87171; }
+.demo-qan-table .ok-cell { color: #4ade80; }
+
+/* ═══ DEMO: Lock Graph SVG ═══ */
+.demo-lock {
+  background: #0f172a; border: 1px solid #334155; border-radius: var(--radius);
+  padding: 24px; box-shadow: var(--shadow-lg); position: relative; overflow: hidden;
+}
+.demo-lock svg { display: block; margin: 0 auto; }
+.lock-node { cursor: default; transition: transform .2s; }
+.lock-node:hover { transform: scale(1.05); }
+.lock-edge { stroke-dasharray: 6 3; animation: dashMove 2s linear infinite; }
+@keyframes dashMove { to { stroke-dashoffset: -18; } }
+.lock-pulse { animation: lockPulse 2s ease-in-out infinite; }
+@keyframes lockPulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+.deadlock-ring { fill: none; stroke: #ef4444; stroke-width: 2; stroke-dasharray: 8 4; animation: dashMove 1s linear infinite; }
+
+/* ═══ DEMO: Plan Diff ═══ */
+.demo-diff {
+  background: #0f172a; border: 1px solid #334155; border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow-lg);
+}
+.demo-diff-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,.06); }
+.demo-diff-tab {
+  flex: 1; text-align: center; padding: 10px; font-size: 12px; font-weight: 600;
+  cursor: pointer; color: rgba(255,255,255,.4); transition: all .15s;
+  border-bottom: 2px solid transparent;
+}
+.demo-diff-tab.active { color: var(--amber-light); border-bottom-color: var(--amber); }
+.demo-diff-body { display: flex; }
+.demo-diff-col {
+  flex: 1; padding: 16px; font-family: var(--font-mono); font-size: 11px; line-height: 1.8;
+  overflow-x: auto; min-height: 180px;
+}
+.demo-diff-col:first-child { border-right: 1px solid rgba(255,255,255,.06); }
+.demo-diff-col .add { background: rgba(22,163,74,.15); color: #4ade80; display: block; margin: 0 -16px; padding: 0 16px; }
+.demo-diff-col .del { background: rgba(220,38,38,.15); color: #f87171; display: block; margin: 0 -16px; padding: 0 16px; }
+.demo-diff-col .k { color: #569cd6; } .demo-diff-col .v { color: #ce9178; } .demo-diff-col .s { color: #9cdcfe; }
+.demo-diff-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: rgba(255,255,255,.3);
+  margin-bottom: 10px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ═══ DEMO: Alert Cards ═══ */
+.demo-alert-stack { display: flex; flex-direction: column; gap: 10px; }
+.demo-alert-card {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+  border-radius: var(--radius-sm); font-size: 13px;
+  border: 1px solid rgba(255,255,255,.06); transition: transform .2s;
+}
+.demo-alert-card:hover { transform: translateX(4px); }
+.demo-alert-card.firing {
+  background: rgba(220,38,38,.08); border-left: 3px solid var(--red);
+}
+.demo-alert-card.warning {
+  background: rgba(217,119,6,.08); border-left: 3px solid var(--amber);
+}
+.demo-alert-card.resolved {
+  background: rgba(22,163,74,.06); border-left: 3px solid var(--green);
+  opacity: .7;
+}
+.alert-icon { font-size: 20px; min-width: 24px; text-align: center; }
+.alert-info { flex: 1; }
+.alert-info .title { font-weight: 600; font-size: 13px; color: var(--text); }
+.alert-info .meta { font-size: 11px; color: var(--text-muted); }
+.alert-status {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  padding: 3px 10px; border-radius: 12px; white-space: nowrap;
+}
+.st-firing { background: rgba(220,38,38,.15); color: var(--red); }
+.st-warning { background: rgba(217,119,6,.15); color: var(--amber); }
+.st-resolved { background: rgba(22,163,74,.12); color: var(--green); }
+
+/* ═══ DEMO: Webhook JSON ═══ */
+.demo-json {
+  background: #0a0f18; border: 1px solid #334155; border-radius: var(--radius-sm);
+  padding: 14px 18px; font-family: var(--font-mono); font-size: 11px;
+  line-height: 1.7; color: #d4d4d4; overflow-x: auto; max-height: 160px; overflow-y: auto;
+}
+.demo-json .jk { color: #569cd6; } .demo-json .js { color: #ce9178; } .demo-json .jn { color: #b5cea8; }
+
+/* ═══ DEMO: Architecture Animation ═══ */
 .arch { display: flex; flex-direction: column; align-items: center; gap: 0; }
 .arch-layer {
-  width: 100%; max-width: 680px; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 22px 28px; text-align: center; position: relative;
+  width: 100%; max-width: 560px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 24px; text-align: center; position: relative;
+  transition: box-shadow .2s, transform .2s;
 }
-.arch-layer:hover { box-shadow: var(--shadow-lg); }
+.arch-layer:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
 .arch-arrow {
-  font-size: 18px; color: var(--amber); padding: 4px 0; font-weight: 700;
+  font-size: 16px; color: var(--amber); padding: 2px 0; font-weight: 700; position: relative;
 }
+.arch-arrow.data-flow {
+  animation: flowPulse 2s ease-in-out infinite;
+}
+@keyframes flowPulse { 0%,100% { opacity: .4; } 50% { opacity: 1; } }
 .arch-layer .layer-num {
   width: 24px; height: 24px; border-radius: 50%; background: var(--amber);
   color: #fff; font-size: 11px; font-weight: 800; display: inline-flex;
   align-items: center; justify-content: center; margin-right: 8px; vertical-align: middle;
 }
-.arch-layer h4 { display: inline; font-size: 16px; font-weight: 700; vertical-align: middle; }
-.arch-layer .layer-desc { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
-.arch-layer .layer-tech { font-size: 11px; color: var(--amber); font-weight: 600; margin-top: 4px; }
+.arch-layer h4 { display: inline; font-size: 15px; font-weight: 700; vertical-align: middle; }
+.arch-layer .layer-desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.arch-layer .layer-tech { font-size: 11px; color: var(--amber); font-weight: 600; }
+.arch-data-badge {
+  display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 4px;
+  background: rgba(22,163,74,.1); color: var(--green); margin-left: 6px;
+  animation: flowPulse 2s ease-in-out infinite; vertical-align: middle;
+}
 
-/* ── Tech ── */
+/* ═══ Tech Stack ═══ */
 .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 14px; }
-.tech-item { display: flex; align-items: flex-start; gap: 14px; padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.tech-item { display: flex; align-items: flex-start; gap: 14px; padding: 20px 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
 .tech-item .t-icon { font-size: 24px; min-width: 32px; text-align: center; }
 .tech-item .t-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: 3px; }
 .tech-item .t-value { font-size: 14px; font-weight: 600; }
 
-/* ── CTA ── */
+/* ═══ CTA ═══ */
 .cta {
   background: linear-gradient(135deg, #1a2740 0%, #143048 100%);
   color: #fff; text-align: center; padding: 80px 24px;
@@ -157,7 +311,7 @@ body {
 .cta p { color: rgba(255,255,255,.6); margin-bottom: 28px; font-size: 15px; }
 .cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
-/* ── Footer ── */
+/* ═══ Footer ═══ */
 .footer { border-top: 1px solid var(--border); text-align: center; padding: 40px 24px 32px; }
 .footer-brand { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
 .footer-brand span { color: var(--amber); }
@@ -166,6 +320,22 @@ body {
 .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color .15s; }
 .footer-links a:hover { color: var(--amber); }
 .footer-legal { font-size: 12px; color: var(--text-muted); }
+
+/* ═══ Utilities ═══ */
+.demo-container { position: relative; }
+.demo-label {
+  position: absolute; top: -10px; right: 12px; z-index: 2;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  background: rgba(22,163,74,.15); color: var(--green); padding: 2px 10px; border-radius: 10px;
+  pointer-events: none;
+}
+
+/* ── Scroll fade-in ── */
+.fade-in {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity .6s ease-out, transform .6s ease-out;
+}
+.fade-in.visible { opacity: 1; transform: translateY(0); }
 </style>
 </head>
 <body>
@@ -176,9 +346,11 @@ body {
     <a href="#" class="nav-logo"><span>Pharos</span>DB</a>
     <button class="menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
     <div class="nav-links">
-      <a href="#features">功能</a>
+      <a href="#qan">QAN</a>
+      <a href="#locks">锁拓扑</a>
+      <a href="#plans">执行计划</a>
+      <a href="#alerts">告警</a>
       <a href="#architecture">架构</a>
-      <a href="#tech">技术栈</a>
       <a href="https://github.com/1wu-davy-2/PharosDB/tree/main/docs" target="_blank">文档</a>
       <a class="nav-star" href="https://github.com/1wu-davy-2/PharosDB" target="_blank">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
@@ -193,16 +365,37 @@ body {
   <div class="hero-badge">开源 &middot; Agentless &middot; 企业生产就绪</div>
   <h1>看见数据库，看穿性能瓶颈</h1>
   <p class="subtitle">
-    PharosDB 是一款专为打破"监控孤岛"而生的数据库可观测性平台。<br>
-    它把慢查询、锁等待、执行计划、基础设施这些分散的信号，<br>
-    融合进同一张诊断视图——不只告诉你"哪里慢"，更指引你"为什么慢"。
+    把慢查询、锁等待、执行计划融合进同一张诊断视图<br>
+    不只告诉你"哪里慢"，更指引你"为什么慢"
   </p>
   <div class="hero-actions">
     <a href="https://github.com/1wu-davy-2/PharosDB" class="btn btn-primary" target="_blank">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
       查看 GitHub &rarr;
     </a>
-    <a href="#features" class="btn btn-ghost">浏览功能特性</a>
+    <a href="#qan" class="btn btn-ghost">看在线 Demo</a>
+  </div>
+
+  <!-- ═══ Hero Terminal Demo ═══ -->
+  <div class="term-wrap">
+    <div class="term-bar">
+      <span class="term-dot r"></span><span class="term-dot y"></span><span class="term-dot g"></span>
+      <span class="term-title">PharosDB — Collector Shell</span>
+    </div>
+    <div class="term-body" id="hero-term">
+      <div><span class="dim"># 启动 PharosDB 采集调度器</span></div>
+      <div><span class="prompt">$</span> <span class="cmd">python manage.py runserver</span></div>
+      <div><span class="ok">✓</span> <span class="dim">Django 5.1 — http://localhost:18000</span></div>
+      <div><span class="ok">✓</span> JWT 认证已就绪</div>
+      <div><span class="ok">✓</span> ClickHouse 连接成功 <span class="dim">(pharos_db)</span></div>
+      <div><span class="info">→</span> 恢复调度: <span class="warn">2</span> 实例</div>
+      <div><span class="ok">✓</span> mariadb-prod-01 <span class="dim">10.0.1.50:3306</span> — 采集中</div>
+      <div><span class="ok">✓</span> postgres-staging <span class="dim">10.0.2.30:5432</span> — 采集中</div>
+      <div><span class="dim"># 第 1 轮采集完成 (耗时 0.8s)</span></div>
+      <div><span class="dim"># metrics → 45 行</span> | <span class="dim">locks → 0</span> | <span class="warn">plans → 3 new</span></div>
+      <div><span class="dim"># 第 2 轮采集完成 (耗时 0.6s) — 整点锚定</span></div>
+      <div><span class="prompt">$</span> <span class="cursor"></span></div>
+    </div>
   </div>
 </header>
 
@@ -210,121 +403,466 @@ body {
 <div class="stats">
   <div class="stat-card">
     <div class="stat-num">3</div>
-    <div class="stat-label">数据库类型</div>
+    <div class="stat-label">数据库类型<br>MySQL / PG / MongoDB</div>
   </div>
   <div class="stat-card">
     <div class="stat-num">9</div>
-    <div class="stat-label">核心模块</div>
+    <div class="stat-label">核心模块<br>采集 · 分析 · 告警 · 计划</div>
   </div>
   <div class="stat-card">
     <div class="stat-num">Agentless</div>
-    <div class="stat-label">采集模式</div>
+    <div class="stat-label">采集模式<br>零 Agent 部署，直连即可</div>
   </div>
   <div class="stat-card">
     <div class="stat-num">200+</div>
-    <div class="stat-label">指标 / 采集周期</div>
+    <div class="stat-label">指标 / 周期<br>皮秒级时间精度</div>
   </div>
 </div>
 
-<!-- ═══ Features ═══ -->
-<section class="sec" id="features">
-  <div class="sec-header">
-    <div class="eyebrow">核心能力</div>
-    <h2>专注那些现有工具做不好的事情</h2>
+<!-- ════════════════════════════════════════════════════════
+   FEATURE 1: QAN — SQL 查询分析
+   ════════════════════════════════════════════════════════ -->
+<section class="sec" id="qan">
+  <div class="sec-header fade-in">
+    <div class="eyebrow">Feature Demo</div>
+    <h2>SQL 查询分析 — 一眼定位慢查询</h2>
+    <p>基于 performance_schema 的实时聚合，SQL 指纹识别，Top-N 排序，多维指标一览</p>
   </div>
-  <div class="feat-grid">
-    <div class="feat-card">
-      <div class="feat-icon i-b">&#x1F4CA;</div>
-      <h3>SQL 洞察（QAN）</h3>
-      <p>基于 performance_schema / pg_stat_statements 的慢查询聚合引擎。SQL 指纹识别 &middot; 执行频次 &middot; 耗时分布 &middot; 扫描行数，Top-N 一目了然。</p>
+  <div class="feat-grid fade-in">
+    <div class="feat-text">
+      <span class="tag tag-blue">QAN Agent</span>
+      <h3>不只是"慢查询列表"</h3>
+      <p>每个 SQL 指纹关联 <strong>12+ 维度的指标</strong>：总耗时、平均延迟、执行次数、扫描行数、锁等待时间、临时表、文件排序、无索引比例……从汇总到明细，一层层下钻。</p>
+      <ul class="feat-bullets">
+        <li>PerfSchema / pg_stat_statements 双数据源</li>
+        <li>皮秒级时间 → 秒，自动单位换算</li>
+        <li>增量 delta 计算，支持 truncate 自动恢复</li>
+        <li>24h 趋势图 + 优化建议自动生成</li>
+        <li>搜索、排序、Schema 过滤、时间范围切换</li>
+      </ul>
     </div>
-    <div class="feat-card">
-      <div class="feat-icon i-r">&#x1F578;</div>
-      <h3>锁链拓扑可视化</h3>
-      <p>实时检测行锁等待，渲染为有向图。谁阻塞谁、等了多久、涉及哪张表。DFS 算法自动识别死锁环，无需解析 INNODB STATUS 文本。</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon i-a">&#x1F514;</div>
-      <h3>智能告警中心</h3>
-      <p>四类规则：慢查询耗时 / 无索引比例 / 查询总量 / 自定义 SQL。ClickHouse 聚合触发，Webhook 兼容 Alertmanager v4，状态机自动流转。</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon i-g">&#x1F9EA;</div>
-      <h3>执行计划对比</h3>
-      <p>自动对 Top-5 慢查询执行 EXPLAIN 并持久化。历史版本时间线，逐节点 Diff&mdash;&mdash;索引增减、filesort 出现，一眼看出优化前后的差异。</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon i-a">&#x26A1;</div>
-      <h3>零依赖内置调度</h3>
-      <p>无 Redis，无 Celery。线程级调度器内置于服务，每实例独立采集间隔，时间锚点消除秒级漂移，重启后自动从数据库恢复全部调度状态。</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon i-b">&#x1F310;</div>
-      <h3>多语言 &middot; 暗色主题</h3>
-      <p>全量 CSS 变量驱动亮/暗模式一键切换，react-i18next 中英文国际化。Vite 5 + React 18，首屏加载 &lt; 200 KB，零额外运行时依赖。</p>
+    <div class="demo-container">
+      <span class="demo-label">Live Demo</span>
+      <div class="demo-qan">
+        <div class="demo-qan-bar">
+          <span class="active">Top 慢查询</span>
+          <span>24h 趋势</span>
+          <span>优化建议</span>
+        </div>
+        <div style="overflow-x:auto">
+        <table class="demo-qan-table">
+          <thead>
+            <tr><th>SQL 指纹</th><th>次数</th><th>总耗时</th><th>平均</th><th>扫描行</th><th>无索引</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="fp">SELECT * FROM orders WHERE user_id = ? AND status = ?</td>
+              <td class="hot">12,847</td>
+              <td class="hot">8,342s</td>
+              <td class="hot">0.65s</td>
+              <td class="warn-cell">1.2M</td>
+              <td class="warn-cell">45%</td>
+            </tr>
+            <tr>
+              <td class="fp">SELECT p.*, c.name FROM products p JOIN category c ON ...</td>
+              <td>8,421</td>
+              <td>2,105s</td>
+              <td>0.25s</td>
+              <td class="warn-cell">450K</td>
+              <td class="ok-cell">0%</td>
+            </tr>
+            <tr>
+              <td class="fp">UPDATE inventory SET quantity = quantity - ? WHERE product_id = ?</td>
+              <td>5,230</td>
+              <td>104s</td>
+              <td>0.02s</td>
+              <td class="ok-cell">5.2K</td>
+              <td class="ok-cell">0%</td>
+            </tr>
+            <tr>
+              <td class="fp">SELECT * FROM audit_log WHERE created_at BETWEEN ? AND ?</td>
+              <td>3,102</td>
+              <td>1,892s</td>
+              <td class="warn-cell">0.61s</td>
+              <td class="warn-cell">890K</td>
+              <td class="warn-cell">100%</td>
+            </tr>
+            <tr>
+              <td class="fp">INSERT INTO event_queue (type, payload, created_at) VALUES ...</td>
+              <td>2,876</td>
+              <td>57s</td>
+              <td>0.02s</td>
+              <td class="ok-cell">2.9K</td>
+              <td class="ok-cell">0%</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ═══ Architecture ═══ -->
-<section class="sec" id="architecture" style="background: var(--bg);">
-  <div class="sec-header">
-    <div class="eyebrow">系统架构</div>
-    <h2>Agentless 直连 &middot; ClickHouse 分析存储 &middot; React 前端</h2>
+<!-- ════════════════════════════════════════════════════════
+   FEATURE 2: Lock Topology
+   ════════════════════════════════════════════════════════ -->
+<section class="sec feat-section" id="locks">
+  <div class="sec-header fade-in">
+    <div class="eyebrow">Feature Demo</div>
+    <h2>锁链拓扑可视化 — 谁阻塞了谁，一眼看清</h2>
+    <p>实时检测行锁等待，有向图渲染，DFS 死锁环自动识别</p>
   </div>
-  <div class="arch">
-    <div class="arch-layer">
-      <span class="layer-num">1</span><h4>可视化层</h4>
-      <div class="layer-tech">React 18 + Vite 5</div>
-      <div class="layer-desc">Dashboard &middot; QAN &middot; 锁拓扑 &middot; 告警中心 &middot; 实例管理</div>
+  <div class="feat-grid reverse fade-in">
+    <div class="feat-text">
+      <span class="tag tag-red">实时拓扑</span>
+      <h3>不解析 INNODB STATUS，直接查 data_lock_waits</h3>
+      <p>传统做法靠正则匹配 <code>SHOW ENGINE INNODB STATUS</code> 文本，跨版本格式不稳定。PharosDB 直接从 performance_schema.data_lock_waits 查询，<strong>用 DFS 算法在关系数据上做环检测</strong>，精确且版本无关。</p>
+      <ul class="feat-bullets">
+        <li>支持 MySQL 5.7 / 8.0+ / MariaDB 10.6+ 自动切换 SQL</li>
+        <li>阻塞方(BLOCKER) / 等待方(WAITER) / 链式中间(BOTH) 三色区分</li>
+        <li>死锁节点黄色高亮 + 脉冲动画</li>
+        <li>自适应轮询：无锁 30s → 检测到锁 5s → 锁清除恢复 30s</li>
+        <li>等待时长、锁模式、锁对象全部展示</li>
+      </ul>
     </div>
-    <div class="arch-arrow">&darr; REST API (JWT)</div>
-    <div class="arch-layer">
-      <span class="layer-num">2</span><h4>业务逻辑层</h4>
-      <div class="layer-tech">Python &middot; Django 5 &middot; DRF</div>
-      <div class="layer-desc">SQL 分析 &middot; 诊断规则 &middot; 告警状态机 &middot; Threading 调度</div>
+    <div class="demo-container">
+      <span class="demo-label">Live Demo</span>
+      <div class="demo-lock">
+        <svg viewBox="0 0 420 220" width="100%" height="220">
+          <defs>
+            <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="#ef4444"/>
+            </marker>
+            <marker id="arrowO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="#f97316"/>
+            </marker>
+          </defs>
+
+          <!-- Deadlock ring -->
+          <ellipse cx="210" cy="110" rx="130" ry="80" class="deadlock-ring"/>
+
+          <!-- Edges -->
+          <line x1="345" y1="75" x2="235" y2="110" stroke="#ef4444" stroke-width="2.5" marker-end="url(#arrowR)" class="lock-edge"/>
+          <line x1="195" y1="130" x2="125" y2="165" stroke="#f97316" stroke-width="2.5" marker-end="url(#arrowO)" class="lock-edge"/>
+          <line x1="115" y1="175" x2="150" y2="130" stroke="#f97316" stroke-width="2.5" marker-end="url(#arrowO)" class="lock-edge"/>
+
+          <!-- Node: Blocker (TRX 421) -->
+          <g class="lock-node">
+            <rect x="300" y="40" width="90" height="70" rx="10" fill="rgba(239,68,68,.15)" stroke="#ef4444" stroke-width="2"/>
+            <text x="345" y="62" text-anchor="middle" fill="#fca5a5" font-size="10" font-weight="700">TRX-421</text>
+            <text x="345" y="78" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="9">持锁方</text>
+            <text x="345" y="96" text-anchor="middle" fill="#ef4444" font-size="9" font-weight="600">BLOCKER</text>
+          </g>
+
+          <!-- Node: Both (TRX 873) -->
+          <g class="lock-node">
+            <rect x="150" y="90" width="90" height="70" rx="10" fill="rgba(168,85,247,.12)" stroke="#a855f7" stroke-width="2"/>
+            <text x="195" y="112" text-anchor="middle" fill="#d8b4fe" font-size="10" font-weight="700">TRX-873</text>
+            <text x="195" y="128" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="9">既等待又持锁</text>
+            <text x="195" y="146" text-anchor="middle" fill="#c084fc" font-size="9" font-weight="600">BOTH</text>
+          </g>
+
+          <!-- Node: Waiter (TRX 156) -->
+          <g class="lock-node">
+            <rect x="55" y="130" width="90" height="70" rx="10" fill="rgba(251,191,36,.12)" stroke="#fbbf24" stroke-width="2" class="lock-pulse"/>
+            <text x="100" y="152" text-anchor="middle" fill="#fde68a" font-size="10" font-weight="700">TRX-156</text>
+            <text x="100" y="168" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="9">等待 12.4s</text>
+            <text x="100" y="186" text-anchor="middle" fill="#fbbf24" font-size="9" font-weight="600">WAITER</text>
+          </g>
+
+          <!-- Deadlock label -->
+          <text x="210" y="38" text-anchor="middle" fill="#ef4444" font-size="11" font-weight="700">⬤ 死锁检测</text>
+
+          <!-- Wait time label -->
+          <text x="290" y="60" fill="#ef4444" font-size="9">X 锁</text>
+          <text x="240" y="148" fill="#f97316" font-size="9">S 锁</text>
+          <text x="175" y="105" fill="#f97316" font-size="9">S 锁</text>
+        </svg>
+      </div>
     </div>
-    <div class="arch-arrow">&darr; Driver 直连</div>
-    <div class="arch-layer">
-      <span class="layer-num">3</span><h4>分析存储层</h4>
-      <div class="layer-tech">ClickHouse</div>
-      <div class="layer-desc">指标时序 &middot; 锁快照 &middot; 执行计划历史 &middot; MergeTree + TTL</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+   FEATURE 3: Execution Plan Diff
+   ════════════════════════════════════════════════════════ -->
+<section class="sec" id="plans">
+  <div class="sec-header fade-in">
+    <div class="eyebrow">Feature Demo</div>
+    <h2>执行计划对比 — 历史版本 Diff，优化效果可量化</h2>
+    <p>自动 EXPLAIN 采集 + 结构化摘要 + 逐节点对比，PMM 不具备的能力</p>
+  </div>
+  <div class="feat-grid fade-in">
+    <div class="feat-text">
+      <span class="tag tag-green">Plan Diff</span>
+      <h3>不只是看一次 EXPLAIN，而是看它怎么变</h3>
+      <p>PMM 只展示单次 EXPLAIN 结果。PharosDB <strong>每 60s 自动对 Top-5 慢查询执行 EXPLAIN</strong>，提取结构摘要去重保存，形成历史版本时间线。当执行计划发生变化时，逐节点 Diff 精确告诉你<strong>哪个表的访问类型变了、哪个索引被用上了、filesort 是否消失</strong>。</p>
+      <ul class="feat-bullets">
+        <li>normalize_plan_summary() — 递归遍历 JSON 树，丢弃 cost 浮动值，保留结构</li>
+        <li>两级去重缓存 — 内存 + ClickHouse，95%+ 命中率</li>
+        <li>access_type rank 排序: system < const < eq_ref < ref < range < index < ALL</li>
+        <li>逐节点比较 → 优化(绿) / 退化(红) / 修改(灰) 三态标签</li>
+        <li>手动 EXPLAIN 入口，即时验证索引优化效果</li>
+      </ul>
     </div>
-    <div class="arch-arrow" style="color:var(--text-muted)">&#8597; 元数据</div>
-    <div class="arch-layer">
-      <span class="layer-num">4</span><h4>元数据层</h4>
-      <div class="layer-tech">MariaDB / MySQL</div>
-      <div class="layer-desc">实例配置 &middot; 用户认证 &middot; 告警规则定义</div>
+    <div class="demo-container">
+      <span class="demo-label">Live Demo</span>
+      <div class="demo-diff">
+        <div class="demo-diff-tabs">
+          <div class="demo-diff-tab active" onclick="switchDiffTab(this,'compare')">对比详情</div>
+          <div class="demo-diff-tab" onclick="switchDiffTab(this,'diffview')">Diff 摘要 (4 处变化)</div>
+        </div>
+        <div class="demo-diff-body" id="diff-compare">
+          <div class="demo-diff-col">
+            <div class="demo-diff-label">Plan A — 12/01 · 优化前</div>
+            <div><span class="k">{</span></div>
+            <div>  <span class="k">"table"</span>: <span class="k">{</span></div>
+            <div class="del">    <span class="k">"access_type"</span>: <span class="v">"ALL"</span>,</div>
+            <div class="del">    <span class="k">"key"</span>: <span class="v">null</span>,</div>
+            <div>    <span class="k">"table_name"</span>: <span class="s">"orders"</span>,</div>
+            <div class="del">    <span class="k">"rows"</span>: <span class="v">500000</span>,</div>
+            <div class="del">    <span class="k">"Extra"</span>: <span class="v">"Using filesort"</span></div>
+            <div>  <span class="k">}</span></div>
+            <div><span class="k">}</span></div>
+          </div>
+          <div class="demo-diff-col">
+            <div class="demo-diff-label">Plan B — 12/02 · 添加 idx_user_status 后</div>
+            <div><span class="k">{</span></div>
+            <div>  <span class="k">"table"</span>: <span class="k">{</span></div>
+            <div class="add">    <span class="k">"access_type"</span>: <span class="v">"ref"</span>,</div>
+            <div class="add">    <span class="k">"key"</span>: <span class="v">"idx_user_status"</span>,</div>
+            <div>    <span class="k">"table_name"</span>: <span class="s">"orders"</span>,</div>
+            <div class="add">    <span class="k">"rows"</span>: <span class="v">1200</span>,</div>
+            <div class="add">    <span class="k">"Extra"</span>: <span class="v">"Using index"</span></div>
+            <div>  <span class="k">}</span></div>
+            <div><span class="k">}</span></div>
+          </div>
+        </div>
+        <div class="demo-diff-body" id="diff-diffview" style="display:none">
+          <div style="padding:16px;font-size:12px;width:100%">
+            <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:var(--font-mono)">
+              <thead><tr style="color:rgba(255,255,255,.4);text-align:left">
+                <th style="padding:6px 10px">路径</th><th style="padding:6px 10px">字段</th><th style="padding:6px 10px">A</th><th style="padding:6px 10px">B</th><th style="padding:6px 10px">变化</th>
+              </tr></thead>
+              <tbody>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+                  <td style="padding:6px 10px;color:#9cdcfe">$.table.access_type</td>
+                  <td style="padding:6px 10px">access_type</td>
+                  <td style="padding:6px 10px;color:#f87171">ALL</td>
+                  <td style="padding:6px 10px;color:#4ade80">ref</td>
+                  <td style="padding:6px 10px"><span style="background:rgba(22,163,74,.15);color:#4ade80;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">OPTIMIZED</span></td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+                  <td style="padding:6px 10px;color:#9cdcfe">$.table.key</td>
+                  <td style="padding:6px 10px">key</td>
+                  <td style="padding:6px 10px;color:#f87171">NULL</td>
+                  <td style="padding:6px 10px;color:#4ade80">idx_user_status</td>
+                  <td style="padding:6px 10px"><span style="background:rgba(22,163,74,.15);color:#4ade80;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">OPTIMIZED</span></td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+                  <td style="padding:6px 10px;color:#9cdcfe">$.table.Extra</td>
+                  <td style="padding:6px 10px">Extra</td>
+                  <td style="padding:6px 10px;color:#f87171">Using filesort</td>
+                  <td style="padding:6px 10px;color:#4ade80">Using index</td>
+                  <td style="padding:6px 10px"><span style="background:rgba(22,163,74,.15);color:#4ade80;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">OPTIMIZED</span></td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 10px;color:#9cdcfe">$.table.rows</td>
+                  <td style="padding:6px 10px">rows</td>
+                  <td style="padding:6px 10px;color:#f87171">500000</td>
+                  <td style="padding:6px 10px;color:#4ade80">1200</td>
+                  <td style="padding:6px 10px"><span style="background:rgba(22,163,74,.15);color:#4ade80;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">OPTIMIZED</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+   FEATURE 4: Alert Center
+   ════════════════════════════════════════════════════════ -->
+<section class="sec feat-section" id="alerts">
+  <div class="sec-header fade-in">
+    <div class="eyebrow">Feature Demo</div>
+    <h2>智能告警中心 — ClickHouse 聚合触发，状态机自动流转</h2>
+    <p>四类规则引擎 · Alertmanager v4 Webhook · 无需 Prometheus</p>
+  </div>
+  <div class="feat-grid reverse fade-in">
+    <div class="feat-text">
+      <span class="tag tag-amber">Alert Engine</span>
+      <h3>告警不依赖外部系统，闭环在 ClickHouse 内完成</h3>
+      <p>PMM 依赖 Prometheus AlertManager，与 ClickHouse 数据源割裂。PharosDB 的告警引擎<strong>直接查询 pharos_db.metrics 表</strong>，支持 4 类规则：慢查询耗时阈值 / 无索引比例 / 查询总量 / 自定义 SQL。每个 (规则, 实例) 独立状态机，firing → resolved 自动流转。</p>
+      <ul class="feat-bullets">
+        <li>slow_query_time — 统计周期内平均耗时超标的查询类型数</li>
+        <li>no_index_ratio — 无索引查询占比 %</li>
+        <li>query_count — 总查询量异常波动</li>
+        <li>custom_sql — 任意 ClickHouse SQL，单行单列阈值比较</li>
+      </ul>
+    </div>
+    <div>
+      <div class="demo-alert-stack fade-in">
+        <!-- Firing alert -->
+        <div class="demo-alert-card firing">
+          <div class="alert-icon">🔴</div>
+          <div class="alert-info">
+            <div class="title">慢查询耗时超标 — mariadb-prod-01</div>
+            <div class="meta">3 类查询平均耗时 &gt; 1.0s · 触发于 14:32 · 持续 12 分钟</div>
+          </div>
+          <span class="alert-status st-firing">FIRING</span>
+        </div>
+        <!-- Warning alert -->
+        <div class="demo-alert-card warning">
+          <div class="alert-icon">🟡</div>
+          <div class="alert-info">
+            <div class="title">无索引比例过高 — postgres-staging</div>
+            <div class="meta">no_index_ratio 45.2% &gt; 30% · 触发于 14:28 · 持续 16 分钟</div>
+          </div>
+          <span class="alert-status st-warning">FIRING</span>
+        </div>
+        <!-- Resolved alert -->
+        <div class="demo-alert-card resolved">
+          <div class="alert-icon">🟢</div>
+          <div class="alert-info">
+            <div class="title">查询总量恢复正常 — mariadb-prod-02</div>
+            <div class="meta">从 12,847 回落到 5,230 · 14:15 触发 → 14:20 恢复 · 持续 5 分钟</div>
+          </div>
+          <span class="alert-status st-resolved">RESOLVED</span>
+        </div>
+      </div>
+
+      <!-- Webhook preview -->
+      <div class="demo-json fade-in" style="margin-top:14px">
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:6px;font-family:-apple-system,BlinkMacSystemFont,sans-serif">WEBHOOK PAYLOAD (Alertmanager v4 兼容)</div>
+        <div><span class="jk">"status"</span>: <span class="js">"firing"</span>,</div>
+        <div><span class="jk">"labels"</span>: {</div>
+        <div>  <span class="jk">"alertname"</span>: <span class="js">"慢查询耗时超标"</span>,</div>
+        <div>  <span class="jk">"severity"</span>: <span class="js">"critical"</span>,</div>
+        <div>  <span class="jk">"instance"</span>: <span class="js">"mariadb-prod-01"</span></div>
+        <div>},</div>
+        <div><span class="jk">"annotations"</span>: {</div>
+        <div>  <span class="jk">"metric_value"</span>: <span class="jn">3</span>,</div>
+        <div>  <span class="jk">"threshold"</span>: <span class="jn">1</span></div>
+        <div>}</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+   FEATURE 5: Agentless Scheduler
+   ════════════════════════════════════════════════════════ -->
+<section class="sec" id="scheduler">
+  <div class="sec-header fade-in">
+    <div class="eyebrow">Feature Demo</div>
+    <h2>零依赖内置调度 — 无 Redis·无 Celery·漂移消除</h2>
+    <p>threading.Timer 链式调度，时间锚点消除秒级漂移，重启自动恢复</p>
+  </div>
+  <div class="feat-grid fade-in">
+    <div class="feat-text">
+      <span class="tag tag-blue">Agentless Core</span>
+      <h3>不装 Agent，不搭 Redis，一个 Python 进程搞定全部调度</h3>
+      <p>传统方案需要 Celery + Redis + Beat 三件套，部署复杂、运维成本高。PharosDB 用 <strong>threading.Timer 链式自调度</strong> 替代，每实例独立线程、独立采集间隔。通过 <code>run_start</code> 时间锚点消除累积漂移——第 N 次采集永远在第 N 分钟开始，不差毫秒。</p>
+      <ul class="feat-bullets">
+        <li>无 Redis / Celery / Beat 依赖，pip install 即用</li>
+        <li>run_start 锚点消除 Threading Timer 累积漂移</li>
+        <li>Django 启动时自动从 DB 恢复全部 active 实例调度</li>
+        <li>每实例独立间隔 (30s ~ 3600s)，互不干扰</li>
+        <li>锁采集自适应调速: 空闲 30s → 活跃 5s</li>
+      </ul>
+    </div>
+    <div class="demo-container">
+      <span class="demo-label">Live Demo</span>
+      <div class="term-wrap">
+        <div class="term-bar">
+          <span class="term-dot r"></span><span class="term-dot y"></span><span class="term-dot g"></span>
+          <span class="term-title">Scheduler Trace Log</span>
+        </div>
+        <div class="term-body" style="min-height:220px">
+          <div><span class="dim">[14:00:00.002]</span> <span class="info">Scheduler</span> 恢复 2 个实例调度</div>
+          <div><span class="dim">[14:00:00.005]</span> <span class="info">LockScheduler</span> mariadb-prod-01 → <span class="ok">启动 (30s idle)</span></div>
+          <div><span class="dim">[14:01:00.001]</span> <span class="warn">▶ 采集 #1</span> mariadb-prod-01 <span class="dim">(耗时 0.8s, 45 rows)</span></div>
+          <div><span class="dim">[14:01:00.002]</span> <span class="warn">▶ 采集 #1</span> postgres-staging <span class="dim">(耗时 0.6s, 32 rows)</span></div>
+          <div><span class="dim">[14:02:00.001]</span> <span class="warn">▶ 采集 #2</span> mariadb-prod-01 <span class="dim">(耗时 0.7s, 45 rows)</span></div>
+          <div><span class="dim">[14:02:56.003]</span> 🔒 <span class="info">LockScheduler</span> 检测到行锁 → <span class="warn">切换 5s 高频</span></div>
+          <div><span class="dim">[14:03:00.001]</span> <span class="warn">▶ 采集 #3</span> mariadb-prod-01 <span class="dim">(耗时 0.7s, 45 rows)</span></div>
+          <div><span class="dim">[14:03:05.012]</span> 🔒 <span class="info">LockScheduler</span> 锁已清除 → <span class="ok">恢复 30s</span></div>
+          <div><span class="dim">[14:04:00.002]</span> <span class="warn">▶ 采集 #4</span> mariadb-prod-01 <span class="dim">(耗时 0.8s, 46 rows)</span></div>
+          <div><span class="dim">[14:04:00.003]</span> <span class="ok">✓</span> EXPLAIN 去重: <span class="warn">1 new</span>, <span class="dim">4 cached</span> <span class="dim">(95% hit)</span></div>
+          <div><span class="prompt">$</span> <span class="dim"># 漂移检测: 4 轮累计偏差 &lt; 2ms</span> <span class="cursor"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+   FEATURE 6: Architecture
+   ════════════════════════════════════════════════════════ -->
+<section class="sec feat-section" id="architecture" style="background: var(--bg);">
+  <div class="sec-header fade-in">
+    <div class="eyebrow">System Architecture</div>
+    <h2>Agentless 直连 &middot; ClickHouse 分析 &middot; React 展示</h2>
+    <p>四层架构，数据从目标 DB 到前端页面的完整链路</p>
+  </div>
+  <div class="fade-in">
+    <div class="arch">
+      <div class="arch-layer">
+        <span class="layer-num">1</span><h4>可视化层 <span class="arch-data-badge">← 用户</span></h4>
+        <div class="layer-tech">React 18 + Vite 5 + CSS Variables + i18n</div>
+        <div class="layer-desc">Dashboard &middot; QAN 慢查询 &middot; 锁拓扑 SVG &middot; 告警中心 &middot; 实例管理 &middot; 执行计划对比</div>
+      </div>
+      <div class="arch-arrow data-flow">&#8593; REST API (JWT Auth)</div>
+      <div class="arch-layer">
+        <span class="layer-num">2</span><h4>业务逻辑层</h4>
+        <div class="layer-tech">Python 3.12 &middot; Django 5.1 &middot; DRF &middot; SimpleJWT</div>
+        <div class="layer-desc">SQL 分析引擎 &middot; 告警状态机 &middot; 计划 Diff 引擎 &middot; Threading 调度器</div>
+      </div>
+      <div class="arch-arrow data-flow">&#8593; Driver 直连 (pymysql / psycopg2 / clickhouse-driver)</div>
+      <div class="arch-layer">
+        <span class="layer-num">3</span><h4>分析存储层 <span class="arch-data-badge" style="animation-delay:.6s">数据流</span></h4>
+        <div class="layer-tech">ClickHouse 26.5 — MergeTree + TTL 自动清理</div>
+        <div class="layer-desc">metrics 时序 &middot; lock_waits 快照 &middot; execution_plans 历史 &middot; 30 天自动过期</div>
+      </div>
+      <div class="arch-arrow" style="color:var(--green)">&#8597; 元数据读写</div>
+      <div class="arch-layer">
+        <span class="layer-num">4</span><h4>配置存储层</h4>
+        <div class="layer-tech">MariaDB 10.5+ / MySQL 5.7+</div>
+        <div class="layer-desc">实例配置 &middot; JWT 用户认证 &middot; 告警规则定义 &middot; 采集调度状态</div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- ═══ Tech Stack ═══ -->
 <section class="sec" id="tech">
-  <div class="sec-header">
+  <div class="sec-header fade-in">
     <div class="eyebrow">技术栈</div>
     <h2>精选组合，各司其职</h2>
   </div>
-  <div class="tech-grid">
+  <div class="tech-grid fade-in">
     <div class="tech-item">
       <div class="t-icon">&#x269B;</div>
       <div>
         <div class="t-label">前端</div>
-        <div class="t-value">React 18 &middot; Vite 5 &middot; CSS Variables &middot; i18n</div>
+        <div class="t-value">React 18 &middot; Vite 5 &middot; CSS Variables &middot; react-i18next</div>
       </div>
     </div>
     <div class="tech-item">
       <div class="t-icon">&#x1F40D;</div>
       <div>
-        <div class="t-label">后端</div>
-        <div class="t-value">Python 3.12 &middot; Django 5 &middot; DRF &middot; SimpleJWT</div>
+        <div class="t-label">后端框架</div>
+        <div class="t-value">Python 3.12 &middot; Django 5.1 &middot; DRF &middot; SimpleJWT</div>
       </div>
     </div>
     <div class="tech-item">
       <div class="t-icon">&#x1F4BE;</div>
       <div>
         <div class="t-label">分析存储</div>
-        <div class="t-value">ClickHouse &middot; MergeTree &middot; TTL 自动清理</div>
+        <div class="t-value">ClickHouse 26.5 &middot; MergeTree &middot; 30-Day TTL</div>
       </div>
     </div>
     <div class="tech-item">
@@ -338,14 +876,14 @@ body {
       <div class="t-icon">&#x1F4E1;</div>
       <div>
         <div class="t-label">采集驱动</div>
-        <div class="t-value">pymysql &middot; psycopg2 &middot; clickhouse-driver（Agentless）</div>
+        <div class="t-value">pymysql &middot; psycopg2 &middot; clickhouse-driver (Agentless 直连)</div>
       </div>
     </div>
     <div class="tech-item">
       <div class="t-icon">&#x1F3D7;</div>
       <div>
         <div class="t-label">一键部署</div>
-        <div class="t-value">dev.ps1 脚本 &middot; Windows &amp; Linux 双平台</div>
+        <div class="t-value">dev.ps1 &middot; Windows &amp; Linux 双平台</div>
       </div>
     </div>
   </div>
@@ -354,7 +892,7 @@ body {
 <!-- ═══ CTA ═══ -->
 <section class="cta">
   <h2>准备好了解 PharosDB 了吗？</h2>
-  <p>部署简单，Agentless 零侵入，10 分钟接入你的第一个数据库实例。</p>
+  <p>Agentless 零侵入，10 分钟接入你的第一个数据库实例。从慢查询到执行计划，从锁拓扑到告警——一站式数据库可观测性。</p>
   <div class="cta-actions">
     <a href="https://github.com/1wu-davy-2/PharosDB" class="btn btn-primary" target="_blank">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
@@ -369,14 +907,47 @@ body {
   <div class="footer-brand"><span>Pharos</span>DB</div>
   <p class="footer-tagline">像灯塔一样，穿透数据库性能迷雾。</p>
   <div class="footer-links">
-    <a href="#features">功能</a>
+    <a href="#qan">QAN</a>
+    <a href="#locks">锁拓扑</a>
+    <a href="#plans">执行计划</a>
+    <a href="#alerts">告警</a>
     <a href="#architecture">架构</a>
-    <a href="#tech">技术栈</a>
     <a href="https://github.com/1wu-davy-2/PharosDB/tree/main/docs" target="_blank">文档</a>
     <a href="https://github.com/1wu-davy-2/PharosDB" target="_blank">GitHub</a>
   </div>
   <p class="footer-legal">&copy; 2025 PharosDB &middot; Apache 2.0 License &middot; Made by 微光 (Lumen)</p>
 </footer>
+
+<script>
+// ═══ Diff Tab Switch ═══
+function switchDiffTab(el, tab) {
+  el.parentElement.querySelectorAll('.demo-diff-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['compare','diffview'].forEach(id => {
+    const e = document.getElementById('diff-' + id);
+    if (e) e.style.display = id === tab ? 'flex' : 'none';
+  });
+}
+
+// ═══ Scroll-triggered fade-in ═══
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ═══ Mobile menu close on link click ═══
+document.querySelectorAll('.nav-links a').forEach(a => {
+  a.addEventListener('click', () => {
+    document.querySelector('.nav-links').classList.remove('open');
+  });
+});
+</script>
 
 </body>
 </html>
