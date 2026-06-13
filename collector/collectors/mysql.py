@@ -199,7 +199,7 @@ class MySQLCollector(BaseCollector):
             if not fingerprint.startswith(("SELECT", "INSERT", "UPDATE", "DELETE", "REPLACE")):
                 continue
             schema_name = (q.get("schema") or "").lower()
-            if schema_name in self._EXCLUDED_SCHEMAS:
+            if schema_name in _EXCLUDED_SCHEMAS:
                 continue
             if self._maybe_collect_explain(q, cur):
                 explain_count += 1
