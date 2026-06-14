@@ -237,13 +237,13 @@ body {
 }
 .demo-alert-card:hover { transform: translateX(4px); }
 .demo-alert-card.firing {
-  background: rgba(220,38,38,.08); border-left: 3px solid var(--red);
+  background: rgba(220,38,38,.12); border-left: 3px solid var(--red);
 }
 .demo-alert-card.warning {
-  background: rgba(217,119,6,.08); border-left: 3px solid var(--amber);
+  background: rgba(217,119,6,.12); border-left: 3px solid var(--amber);
 }
 .demo-alert-card.resolved {
-  background: rgba(22,163,74,.06); border-left: 3px solid var(--green);
+  background: rgba(22,163,74,.08); border-left: 3px solid var(--green);
   opacity: .7;
 }
 .alert-icon { font-size: 20px; min-width: 24px; text-align: center; }
@@ -1115,26 +1115,26 @@ body {
       <div class="demo-alert-card firing">
         <span class="sev" style="background:#dc2626"></span>
         <div>
-          <div style="font-size:12px;font-weight:600;color:#fff">Root 可远程连接 (root@172.16.%)</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.3);font-family:var(--font-mono)">mariadb-prod-01 &middot; 5 分前发现</div>
+          <div style="font-size:12px;font-weight:600;color:#fca5a5">Root 可远程连接 (root@172.16.%)</div>
+          <div style="font-size:10px;color:#fca5a5;font-family:var(--font-mono)">mariadb-prod-01 &middot; 5 分前发现</div>
         </div>
         <span style="margin-left:auto;font-size:10px;color:#f87171;font-weight:700;white-space:nowrap">ERROR</span>
       </div>
-      <div class="demo-alert-card firing">
+      <div class="demo-alert-card warning">
         <span class="sev" style="background:#ea580c"></span>
         <div>
-          <div style="font-size:12px;font-weight:600;color:#fff">明文传输: require_secure_transport = OFF</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.3);font-family:var(--font-mono)">mariadb-prod-01 &middot; 5 分前发现</div>
+          <div style="font-size:12px;font-weight:600;color:#fbbf24">明文传输: require_secure_transport = OFF</div>
+          <div style="font-size:10px;color:#fcd34d;font-family:var(--font-mono)">mariadb-prod-01 &middot; 5 分前发现</div>
         </div>
-        <span style="margin-left:auto;font-size:10px;color:var(--orange);font-weight:700;white-space:nowrap">WARN</span>
+        <span style="margin-left:auto;font-size:10px;color:#f59e0b;font-weight:700;white-space:nowrap">WARN</span>
       </div>
       <div class="demo-alert-card resolved">
         <span class="sev" style="background:#16a34a"></span>
         <div>
-          <div style="font-size:12px;font-weight:600;color:var(--green)">local_infile 已禁用 ✓ (已修复)</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.3);font-family:var(--font-mono)">mariadb-prod-01 &middot; 1 小时前修复</div>
+          <div style="font-size:12px;font-weight:600;color:#4ade80">local_infile 已禁用 ✓ (已修复)</div>
+          <div style="font-size:10px;color:#4ade80;font-family:var(--font-mono)">mariadb-prod-01 &middot; 1 小时前修复</div>
         </div>
-        <span style="margin-left:auto;font-size:10px;color:var(--green);font-weight:700;white-space:nowrap">RESOLVED</span>
+        <span style="margin-left:auto;font-size:10px;color:#4ade80;font-weight:700;white-space:nowrap">RESOLVED</span>
       </div>
       <div class="demo-alert-card" style="border:1px solid rgba(255,255,255,.06);padding:14px 18px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.5)">
         <span style="color:var(--amber-light);font-weight:600">17 条规则</span>
