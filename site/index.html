@@ -383,6 +383,7 @@ body {
       <a href="#dashboard">Dashboard</a>
       <a href="#crossnode">跨节点</a>
       <a href="#advisor">巡检</a>
+      <a href="#rbac">权限</a>
       <a href="#architecture">架构</a>
       <a href="https://github.com/1wu-davy-2/PharosDB/tree/main/docs" target="_blank">文档</a>
       <a class="nav-star" href="https://github.com/1wu-davy-2/PharosDB" target="_blank">
@@ -439,8 +440,8 @@ body {
     <div class="stat-label">数据库类型<br>MySQL / PG / MongoDB</div>
   </div>
   <div class="stat-card">
-    <div class="stat-num">9</div>
-    <div class="stat-label">核心模块<br>采集 · 分析 · 告警 · 计划</div>
+    <div class="stat-num">11</div>
+    <div class="stat-label">核心模块<br>采集·分析·巡检·权限·告警</div>
   </div>
   <div class="stat-card">
     <div class="stat-num">Agentless</div>
@@ -1107,52 +1108,144 @@ body {
 <section class="sec feat-section" id="advisor">
   <div class="sec-header">
     <span class="eyebrow">Advisor</span>
-    <h2>安全巡检 &middot; 17 条规则</h2>
-    <p>自动检测 MySQL / PostgreSQL 安全漏洞与配置违规，对标 PMM Advisor 标准</p>
+    <h2>安全巡检 &middot; 实例分组 &middot; 定时调度</h2>
+    <p>17+ 条安全规则，分组定向巡检，自动定时执行——对标 PMM Advisor 标准，纯 Python 无 Starlark 依赖</p>
   </div>
   <div class="feat-grid reverse">
-    <div class="demo-alert-stack" style="max-height:360px;overflow:auto">
+    <div class="demo-alert-stack" style="max-height:420px;overflow:auto">
+      <!-- Group targeting info -->
+      <div style="padding:10px 14px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.15);border-radius:6px;font-size:11px;color:rgba(255,255,255,.6);margin-bottom:8px">
+        <span style="color:#60a5fa;font-weight:600">🎯 定向: 生产环境MySQL</span>
+        <span style="margin-left:12px">🟢 定时巡检运行中</span>
+        <span style="margin-left:12px;color:var(--amber-light)">8 checks active</span>
+      </div>
       <div class="demo-alert-card firing">
-        <span class="sev" style="background:#dc2626"></span>
-        <div>
+        <span class="sev" style="background:#dc2626;width:8px;height:8px;border-radius:50%;flex-shrink:0"></span>
+        <div style="flex:1">
           <div style="font-size:12px;font-weight:600;color:#fca5a5">Root 可远程连接 (root@172.16.%)</div>
-          <div style="font-size:10px;color:#fca5a5;font-family:var(--font-mono)">mariadb-prod-01 &middot; 5 分前发现</div>
+          <div style="font-size:10px;color:#fca5a5;font-family:var(--font-mono)">mariadb-prod-01 · 5 分前发现</div>
         </div>
-        <span style="margin-left:auto;font-size:10px;color:#f87171;font-weight:700;white-space:nowrap">ERROR</span>
+        <span style="font-size:10px;color:#f87171;font-weight:700;white-space:nowrap">ERROR</span>
       </div>
       <div class="demo-alert-card warning">
-        <span class="sev" style="background:#ea580c"></span>
-        <div>
+        <span class="sev" style="background:#ea580c;width:8px;height:8px;border-radius:50%;flex-shrink:0"></span>
+        <div style="flex:1">
           <div style="font-size:12px;font-weight:600;color:#fbbf24">明文传输: require_secure_transport = OFF</div>
-          <div style="font-size:10px;color:#fcd34d;font-family:var(--font-mono)">mariadb-prod-01 &middot; 5 分前发现</div>
+          <div style="font-size:10px;color:#fcd34d;font-family:var(--font-mono)">mariadb-prod-01 · 5 分前发现</div>
         </div>
-        <span style="margin-left:auto;font-size:10px;color:#f59e0b;font-weight:700;white-space:nowrap">WARN</span>
+        <span style="font-size:10px;color:#f59e0b;font-weight:700;white-space:nowrap">WARN</span>
       </div>
       <div class="demo-alert-card resolved">
-        <span class="sev" style="background:#16a34a"></span>
-        <div>
+        <span class="sev" style="background:#16a34a;width:8px;height:8px;border-radius:50%;flex-shrink:0"></span>
+        <div style="flex:1">
           <div style="font-size:12px;font-weight:600;color:#4ade80">local_infile 已禁用 ✓ (已修复)</div>
-          <div style="font-size:10px;color:#4ade80;font-family:var(--font-mono)">mariadb-prod-01 &middot; 1 小时前修复</div>
+          <div style="font-size:10px;color:#4ade80;font-family:var(--font-mono)">mariadb-prod-01 · 1 小时前修复</div>
         </div>
-        <span style="margin-left:auto;font-size:10px;color:#4ade80;font-weight:700;white-space:nowrap">RESOLVED</span>
+        <span style="font-size:10px;color:#4ade80;font-weight:700;white-space:nowrap">RESOLVED</span>
       </div>
-      <div class="demo-alert-card" style="border:1px solid rgba(255,255,255,.06);padding:14px 18px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.5)">
-        <span style="color:var(--amber-light);font-weight:600">17 条规则</span>
-        覆盖 MySQL 安全认证、配置安全、PostgreSQL 超级用户、SSL、CVE 版本检查
+      <!-- Groups list -->
+      <div style="padding:12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:8px;font-size:11px;color:rgba(255,255,255,.5);margin-top:4px">
+        <div style="color:var(--amber-light);font-weight:600;margin-bottom:6px">📦 实例分组</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span style="padding:3px 8px;border-radius:4px;background:rgba(16,185,129,.1);color:#34d399;font-size:10px">生产环境MySQL (2 实例)</span>
+          <span style="padding:3px 8px;border-radius:4px;background:rgba(59,130,246,.1);color:#60a5fa;font-size:10px">PG 集群 (1 实例)</span>
+          <span style="padding:3px 8px;border-radius:4px;background:rgba(251,191,36,.1);color:var(--amber-light);font-size:10px">⚠ 开发环境 (0 checks)</span>
+        </div>
       </div>
     </div>
     <div class="feat-text">
-      <span class="tag tag-red">Security</span>
-      <h3>对标 PMM Advisor 的安全巡检</h3>
-      <p>告别 Starlark 子进程和 gRPC agent。PharosDB 用纯 Python + SQL 表达式引擎，复用 collector 连接池，直接对目标数据库执行安全检查。</p>
+      <span class="tag tag-red">Security + Scheduler</span>
+      <h3>分组定向 + 定时执行 + 自动恢复</h3>
+      <p>告别手动巡检。创建实例分组，将规则定向到特定组，开启定时调度——系统按 standard(24h) / frequent(4h) / rare(72h) 频率自动执行，发现问题实时记录，修复后自动标记 resolved。</p>
       <ul class="feat-bullets">
+        <li><strong>实例分组</strong>：按环境/集群组织实例，规则定向到分组而非全量</li>
+        <li><strong>定时调度</strong>：每规则独立 Timer 线程，按 interval 自动执行，一键启停</li>
         <li><strong>MySQL 安全认证</strong>：匿名用户 / 无密码 / Root 远程 / 全网开放 / 超级权限 / SSL</li>
         <li><strong>MySQL 配置安全</strong>：明文传输 / 密码策略 / 密码过期 / local_infile</li>
         <li><strong>PostgreSQL 安全</strong>：超级用户 / trust 认证 / public schema / SSL / CVE 版本</li>
         <li><strong>通用配置</strong>：连接数阈值 / Binlog 检查</li>
-        <li>支持 EXISTS 模式（有行即问题）和 THRESHOLD 模式（超阈值即问题）</li>
-        <li>基于 PMM v3.8 安全检查 YAML 提取 SQL，语义完全对齐</li>
+        <li>基于 PMM v3.8 安全检查 YAML 提取 SQL，纯 Python 引擎，无 Starlark 依赖</li>
       </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     NEW: RBAC — Role-Based Access Control
+     ════════════════════════════════════════════════════════ -->
+<section class="sec feat-section" id="rbac">
+  <div class="sec-header">
+    <span class="eyebrow">Enterprise Ready</span>
+    <h2>权限管理 &middot; 角色配置 &middot; 精准到按钮</h2>
+    <p>3 个内置角色 + 自定义角色，23 个权限码覆盖全部功能，前后端双重校验</p>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-text">
+      <span class="tag tag-blue">RBAC</span>
+      <h3>不是"超管 vs 普通"的二元划分</h3>
+      <p>传统做法只有一个 <code>is_superuser</code> 开关——要么什么都干，要么什么都干不了。PharosDB 从设计之初就考虑生产环境的多角色协作场景。</p>
+      <ul class="feat-bullets">
+        <li><strong>3 个内置角色</strong>：超级管理员（全部权限）/ 运维人员（日常运维，不可管理系统用户）/ 只读观察者（所有页面只读）</li>
+        <li><strong>自定义角色</strong>：勾选 23 个权限码自由组合，创建专属角色</li>
+        <li><strong>精准到按钮</strong>：Viewer 看不到"删除实例"按钮，Operator 看不到"系统管理"入口</li>
+        <li><strong>双重校验</strong>：前端根据角色权限隐藏 UI + 后端 API 403 强制拒绝</li>
+        <li>登录失败锁定保护：同用户名+IP 15 分钟窗口内连续 5 次失败后自动锁定</li>
+      </ul>
+    </div>
+    <div>
+      <!-- Role cards -->
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:var(--radius);padding:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px;font-weight:700;color:#fff">👑 超级管理员</span>
+            <span style="font-size:9px;background:rgba(59,130,246,.15);color:#60a5fa;padding:2px 6px;border-radius:3px;font-weight:600">内置</span>
+          </div>
+          <div style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:8px">拥有系统全部权限 · 1 个用户</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            <span style="padding:2px 6px;border-radius:3px;background:rgba(16,185,129,.1);color:#34d399;font-size:9px">23 项权限</span>
+            <span style="padding:2px 6px;border-radius:3px;background:rgba(16,185,129,.1);color:#34d399;font-size:9px">全部页面</span>
+            <span style="padding:2px 6px;border-radius:3px;background:rgba(16,185,129,.1);color:#34d399;font-size:9px">用户管理</span>
+            <span style="padding:2px 6px;border-radius:3px;background:rgba(16,185,129,.1);color:#34d399;font-size:9px">全局设置</span>
+          </div>
+        </div>
+
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:var(--radius);padding:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px;font-weight:700;color:#fff">🔧 运维人员</span>
+            <span style="font-size:9px;background:rgba(59,130,246,.15);color:#60a5fa;padding:2px 6px;border-radius:3px;font-weight:600">内置</span>
+          </div>
+          <div style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:8px">日常运维操作 · 不可管理系统用户和全局设置</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            <span style="padding:2px 6px;border-radius:3px;background:rgba(16,185,129,.1);color:#34d399;font-size:9px">20 项权限</span>
+            <span style="padding:2px 6px;border-radius:3px;background:rgba(16,185,129,.1);color:#34d399;font-size:9px">管理实例</span>
+            <span style="padding:2px 6px;border-radius:3px;background:rgba(16,185,129,.1);color:#34d399;font-size:9px">管理告警</span>
+            <span style="padding:2px 6px;border-radius:3px;background:rgba(16,185,129,.1);color:#34d399;font-size:9px">执行巡检</span>
+          </div>
+        </div>
+
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:var(--radius);padding:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px;font-weight:700;color:#fff">👁 只读观察者</span>
+            <span style="font-size:9px;background:rgba(59,130,246,.15);color:#60a5fa;padding:2px 6px;border-radius:3px;font-weight:600">内置</span>
+          </div>
+          <div style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:8px">仅可查看所有页面数据 · 不可执行任何修改操作</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            <span style="padding:2px 6px;border-radius:3px;background:rgba(107,114,128,.12);color:#9ca3af;font-size:9px">6 项权限</span>
+            <span style="padding:2px 6px;border-radius:3px;background:rgba(107,114,128,.12);color:#9ca3af;font-size:9px">只读查看</span>
+            <span style="padding:2px 6px;border-radius:3px;background:rgba(107,114,128,.12);color:#9ca3af;font-size:9px">隐藏操作按钮</span>
+          </div>
+        </div>
+
+        <!-- Permission code visualization -->
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:var(--radius);padding:14px;font-size:10px;font-family:var(--font-mono);color:rgba(255,255,255,.35);line-height:1.8">
+          <div style="color:var(--amber-light);font-weight:700;margin-bottom:6px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:11px">权限码体系 (Permission Codes)</div>
+          <div><span style="color:#60a5fa">instances</span>: view · create · edit · delete · test · collect</div>
+          <div><span style="color:#60a5fa">qan</span>: view · explain  &nbsp;  <span style="color:#60a5fa">locks</span>: view</div>
+          <div><span style="color:#60a5fa">alerts</span>: view · create · edit · delete · toggle</div>
+          <div><span style="color:#60a5fa">advisor</span>: view · run · toggle · targeting · groups</div>
+          <div><span style="color:#60a5fa">settings</span>: view · write  &nbsp;  <span style="color:#60a5fa">system</span>: view · users</div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -1234,6 +1327,7 @@ body {
     <a href="#dashboard">Dashboard</a>
     <a href="#crossnode">跨节点</a>
     <a href="#advisor">巡检</a>
+    <a href="#rbac">权限</a>
     <a href="#settings">全局设置</a>
     <a href="https://github.com/1wu-davy-2/PharosDB/tree/main/docs" target="_blank">文档</a>
     <a href="https://github.com/1wu-davy-2/PharosDB" target="_blank">GitHub</a>
