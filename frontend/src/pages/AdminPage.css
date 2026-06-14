@@ -59,6 +59,160 @@
 .admin-btn:disabled { opacity: .5; cursor: not-allowed; }
 .admin-btn--primary { background: var(--color-accent); color: #fff; }
 
+/* ── Tabs bar ── */
+.admin-tabs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.admin-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+.admin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.admin-tab:hover { color: var(--color-text); }
+.admin-tab--active { background: var(--color-accent); color: #fff; }
+.admin-toolbar-right { display: flex; gap: 8px; }
+
+/* ── Role cards ── */
+.admin-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+  gap: 12px;
+}
+.admin-role-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.admin-role-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.admin-role-card-name { font-size: 14px; font-weight: 700; color: var(--color-text); }
+.admin-role-card-builtin {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(59,130,246,.12);
+  color: #60a5fa;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.admin-role-card-count { font-size: 11px; color: var(--color-text-muted); margin-left: 8px; }
+.admin-role-card-actions { display: flex; gap: 2px; flex-shrink: 0; }
+.admin-role-card-desc { font-size: 12px; color: var(--color-text-muted); margin-bottom: 10px; line-height: 1.5; }
+.admin-role-card-perms {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.admin-role-perm-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+}
+.admin-role-perm-group--empty { opacity: .35; }
+.admin-role-perm-group-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  min-width: 64px;
+  text-align: right;
+}
+.admin-role-perm-tags { display: flex; flex-wrap: wrap; gap: 3px; }
+.admin-role-perm-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(16,185,129,.1);
+  color: #34d399;
+  font-size: 10px;
+  font-weight: 500;
+}
+.admin-role-perm-none { font-size: 11px; color: var(--color-text-dim); }
+
+/* ── Permission editor (modal) ── */
+.admin-modal--wide { width: 660px; }
+.admin-modal-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  resize: vertical;
+}
+.admin-modal-textarea:focus { border-color: var(--color-accent); }
+.admin-perm-editor {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 8px;
+}
+.admin-perm-edit-group {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.admin-perm-edit-group:last-child { border-bottom: none; }
+.admin-perm-edit-group-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.admin-perm-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.admin-perm-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background .1s;
+}
+.admin-perm-checkbox-label:hover { background: var(--color-surface-subtle); }
+.admin-perm-checkbox-label input[type="checkbox"] { accent-color: var(--color-accent); }
+
 /* ── Table ── */
 .admin-table-wrap {
   overflow-x: auto;

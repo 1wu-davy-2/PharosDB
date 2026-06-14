@@ -7,7 +7,7 @@ from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import LoginAttempt, UserRole, UserProfile
+from .models import LoginAttempt, UserRole, UserProfile, PERMISSION_GROUPS
 from .permissions import HasPermission, get_user_permissions
 from .serializers import (
     AdminCreateUserSerializer,
@@ -279,10 +279,11 @@ class UserUnlockView(views.APIView):
 # ═══════════════════════════════════════════════════════════════════
 
 class RoleListView(views.APIView):
-    """GET /api/auth/roles/ — 列出所有角色。"""
+    """GET /api/auth/roles/ — 列出所有角色。
+    POST /api/auth/roles/ — 创建自定义角色。"""
 
     permission_classes = [permissions.IsAuthenticated, HasPermission]
-    required_permission = "system:view"
+    permission_map = {"GET": "system:view", "POST": "system:users"}
 
     def get(self, request):
         roles = UserRole.objects.annotate(
@@ -302,9 +303,43 @@ class RoleListView(views.APIView):
             })
         return Response({"roles": data})
 
+    def post(self, request):
+        name = (request.data.get("name") or "").strip()
+        display_name = (request.data.get("display_name") or "").strip()
+        description = request.data.get("description", "")
+        permissions_list = request.data.get("permissions", [])
+
+        if not name:
+            return Response({"error": "角色标识不能为空"}, status=400)
+        if not display_name:
+            return Response({"error": "显示名称不能为空"}, status=400)
+        if UserRole.objects.filter(name=name).exists():
+            return Response({"error": f"角色标识 '{name}' 已存在"}, status=400)
+
+        role = UserRole.objects.create(
+            name=name,
+            display_name=display_name,
+            description=description,
+            permissions=permissions_list,
+            is_builtin=False,
+        )
+        return Response({
+            "status": "ok",
+            "role": {
+                "id": role.id,
+                "name": role.name,
+                "display_name": role.display_name,
+                "description": role.description,
+                "permissions": role.permissions,
+                "is_builtin": role.is_builtin,
+                "user_count": 0,
+            },
+        }, status=status.HTTP_201_CREATED)
+
 
 class RoleDetailView(views.APIView):
-    """PUT /api/auth/roles/<id>/ — 更新角色权限（仅 builtin=False 的角色）。"""
+    """PUT /api/auth/roles/<id>/ — 更新角色。
+    DELETE /api/auth/roles/<id>/ — 删除角色（仅非内置）。"""
 
     permission_classes = [permissions.IsAuthenticated, HasPermission]
     required_permission = "system:users"
@@ -315,10 +350,18 @@ class RoleDetailView(views.APIView):
         except UserRole.DoesNotExist:
             return Response({"error": "角色不存在"}, status=404)
 
-        serializer = RoleUpdateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        role.permissions = serializer.validated_data["permissions"]
-        role.save(update_fields=["permissions"])
+        display_name = request.data.get("display_name")
+        description = request.data.get("description")
+        permissions_list = request.data.get("permissions")
+
+        if display_name is not None:
+            role.display_name = display_name
+        if description is not None:
+            role.description = description
+        if permissions_list is not None:
+            role.permissions = permissions_list
+
+        role.save()
 
         return Response({
             "status": "ok",
@@ -326,10 +369,33 @@ class RoleDetailView(views.APIView):
                 "id": role.id,
                 "name": role.name,
                 "display_name": role.display_name,
+                "description": role.description,
                 "permissions": role.permissions,
                 "is_builtin": role.is_builtin,
             },
         })
+
+    def delete(self, request, pk):
+        try:
+            role = UserRole.objects.get(pk=pk)
+        except UserRole.DoesNotExist:
+            return Response({"error": "角色不存在"}, status=404)
+
+        if role.is_builtin:
+            return Response({"error": "内置角色不可删除"}, status=400)
+
+        role.delete()
+        return Response({"status": "ok", "detail": f"角色 '{role.display_name}' 已删除。"})
+
+
+class PermissionsMetaView(views.APIView):
+    """GET /api/auth/permissions/ — 权限码分组元数据（供前端渲染权限复选框）。"""
+
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "system:view"
+
+    def get(self, request):
+        return Response({"groups": PERMISSION_GROUPS})
 
 
 class UserRoleAssignmentView(views.APIView):

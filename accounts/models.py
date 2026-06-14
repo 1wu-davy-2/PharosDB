@@ -43,6 +43,75 @@ ALL_PERMISSIONS = [
 
 ALL_PERMISSIONS_SET = set(ALL_PERMISSIONS)
 
+# Permission groups for frontend checkbox rendering
+PERMISSION_GROUPS = [
+    {
+        "name": "实例管理",
+        "name_en": "Instances",
+        "permissions": [
+            {"code": "instances:view", "label": "查看实例", "label_en": "View"},
+            {"code": "instances:create", "label": "注册实例", "label_en": "Create"},
+            {"code": "instances:edit", "label": "编辑实例", "label_en": "Edit"},
+            {"code": "instances:delete", "label": "删除实例", "label_en": "Delete"},
+            {"code": "instances:test", "label": "连接测试", "label_en": "Test"},
+            {"code": "instances:collect", "label": "手动采集", "label_en": "Collect"},
+        ],
+    },
+    {
+        "name": "SQL 分析",
+        "name_en": "QAN",
+        "permissions": [
+            {"code": "qan:view", "label": "查看查询分析", "label_en": "View"},
+            {"code": "qan:explain", "label": "手动 EXPLAIN", "label_en": "Explain"},
+        ],
+    },
+    {
+        "name": "锁分析",
+        "name_en": "Locks",
+        "permissions": [
+            {"code": "locks:view", "label": "查看锁分析", "label_en": "View"},
+        ],
+    },
+    {
+        "name": "告警中心",
+        "name_en": "Alerts",
+        "permissions": [
+            {"code": "alerts:view", "label": "查看告警", "label_en": "View"},
+            {"code": "alerts:create", "label": "创建规则", "label_en": "Create"},
+            {"code": "alerts:edit", "label": "编辑规则", "label_en": "Edit"},
+            {"code": "alerts:delete", "label": "删除规则", "label_en": "Delete"},
+            {"code": "alerts:toggle", "label": "启用/禁用规则", "label_en": "Toggle"},
+        ],
+    },
+    {
+        "name": "安全巡检",
+        "name_en": "Advisor",
+        "permissions": [
+            {"code": "advisor:view", "label": "查看巡检", "label_en": "View"},
+            {"code": "advisor:run", "label": "执行巡检", "label_en": "Run"},
+            {"code": "advisor:toggle", "label": "启用/禁用规则", "label_en": "Toggle"},
+            {"code": "advisor:targeting", "label": "配置目标分组", "label_en": "Targeting"},
+            {"code": "advisor:groups", "label": "管理实例分组", "label_en": "Groups"},
+        ],
+    },
+    {
+        "name": "全局设置",
+        "name_en": "Settings",
+        "permissions": [
+            {"code": "settings:view", "label": "查看设置", "label_en": "View"},
+            {"code": "settings:write", "label": "修改设置", "label_en": "Write"},
+        ],
+    },
+    {
+        "name": "系统管理",
+        "name_en": "System",
+        "permissions": [
+            {"code": "system:view", "label": "查看系统管理", "label_en": "View"},
+            {"code": "system:users", "label": "管理用户", "label_en": "Users"},
+        ],
+    },
+]
+
 # Pre-built permission sets for built-in roles
 ROLE_PERMISSIONS = {
     "super_admin": ALL_PERMISSIONS_SET,

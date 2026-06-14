@@ -24,4 +24,6 @@ urlpatterns = [
     path("auth/roles/", views.RoleListView.as_view(), name="admin_roles"),
     path("auth/roles/<int:pk>/", views.RoleDetailView.as_view(), name="admin_role_detail"),
     path("auth/users/<int:pk>/role/", views.UserRoleAssignmentView.as_view(), name="admin_user_role"),
+    # Permission metadata
+    path("auth/permissions/", views.PermissionsMetaView.as_view(), name="admin_permissions"),
 ]
