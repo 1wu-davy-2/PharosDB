@@ -16,6 +16,7 @@
     "instances": "实例管理",
     "locks": "锁分析",
     "alerts": "告警中心",
+    "advisor": "安全巡检",
     "settings": "全局设置"
   },
   "login": {

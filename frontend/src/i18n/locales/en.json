@@ -16,6 +16,7 @@
     "instances": "Instances",
     "locks": "Lock Analysis",
     "alerts": "Alerts",
+    "advisor": "Advisor",
     "settings": "Settings"
   },
   "login": {

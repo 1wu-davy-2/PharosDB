@@ -19,6 +19,7 @@ function Sidebar({ collapsed, onToggle }) {
     { icon: "storage", label: t("nav.instances"), to: "/instances" },
     { icon: "device_hub", label: t("nav.locks"), to: "/locks" },
     { icon: "notifications", label: t("nav.alerts"), to: "/alerts" },
+    { icon: "verified_user", label: t("nav.advisor"), to: "/advisor" },
     { icon: "tune", label: t("nav.settings"), to: "/settings" },
   ];
 
