@@ -380,6 +380,9 @@ body {
       <a href="#plans">执行计划</a>
       <a href="#indexes">索引优化</a>
       <a href="#alerts">告警</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#crossnode">跨节点</a>
+      <a href="#advisor">巡检</a>
       <a href="#architecture">架构</a>
       <a href="https://github.com/1wu-davy-2/PharosDB/tree/main/docs" target="_blank">文档</a>
       <a class="nav-star" href="https://github.com/1wu-davy-2/PharosDB" target="_blank">
@@ -960,6 +963,200 @@ body {
   </div>
 </section>
 
+<!-- ════════════════════════════════════════════════════════
+     NEW: Dashboard v2 — Pharos Beacon
+     ════════════════════════════════════════════════════════ -->
+<section class="sec feat-section" id="dashboard" style="background: var(--surface);">
+  <div class="sec-header">
+    <span class="eyebrow">Dashboard v2</span>
+    <h2>Pharos Beacon — 指挥中心</h2>
+    <p>健康指数打分、锁扫描雷达、实例健康网格、实时告警流——数据从未如此直观</p>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-text">
+      <span class="tag tag-amber">Sci-Fi 设计</span>
+      <h3>不只是仪表盘，是指挥中心</h3>
+      <p>新版 Dashboard 以 Sci-Fi 战斗指挥中心为设计灵感，扫描光束、粒子背景、健康指数环形评分——让数据库状态一目了然。</p>
+      <ul class="feat-bullets">
+        <li>4 维统计卡片：活跃实例 / 活跃告警 / 平均延迟 / 唯一查询</li>
+        <li>锁扫描雷达：SVG 力导向图，实时渲染锁等待拓扑 + 死锁检测</li>
+        <li>实例健康网格：所有节点连接状态、角色标签、错误概览</li>
+        <li>自动刷新 + 时间段切换 + 实例筛选，全部控件嵌入顶栏</li>
+        <li>亮色 / 暗色主题一键切换</li>
+      </ul>
+    </div>
+    <div class="demo-qan" style="padding:16px;margin-top:0">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+        <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:800;color:#10b981">92</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:4px">Health Score</div>
+        </div>
+        <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:800;color:var(--amber-light)">5</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:4px">Active Instances</div>
+        </div>
+        <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:800;color:#3b82f6">127ms</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:4px">Avg Latency</div>
+        </div>
+        <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:800;color:#ef4444">3</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:4px">Active Alerts</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding:12px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.15);border-radius:6px;font-size:11px;color:rgba(255,255,255,.5)">
+        <span style="color:#4ade80;font-weight:600">[OK]</span> 自动刷新开启 &middot; 所有实例连接正常 &middot; 无死锁检测
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     NEW: Global Settings + Push Config
+     ════════════════════════════════════════════════════════ -->
+<section class="sec feat-section" id="settings">
+  <div class="sec-header">
+    <span class="eyebrow">Global Settings</span>
+    <h2>全局设置 &middot; 推送配置</h2>
+    <p>系统参数即时生效，SMTP / Webhook 告警通道一键配置</p>
+  </div>
+  <div class="feat-grid reverse">
+    <div class="demo-qan" style="padding:20px">
+      <div style="display:flex;gap:4px;margin-bottom:14px;background:rgba(255,255,255,.03);border-radius:8px;padding:4px">
+        <span style="flex:1;text-align:center;padding:6px;border-radius:6px;background:var(--amber);color:#fff;font-size:12px;font-weight:600">系统设置</span>
+        <span style="flex:1;text-align:center;padding:6px;border-radius:6px;color:rgba(255,255,255,.4);font-size:12px">推送配置</span>
+      </div>
+      <div style="font-size:11px;font-family:var(--font-mono);color:rgba(255,255,255,.6);line-height:2">
+        <div style="color:var(--amber-light)">[采集参数]</div>
+        <div>  top_n_explain = <span style="color:#4ade80">5</span> ← 自动EXPLAIN Top-N</div>
+        <div>  explain_timeout = <span style="color:#4ade80">3</span> ← EXPLAIN超时(秒)</div>
+        <div style="color:var(--amber-light);margin-top:8px">[告警参数]</div>
+        <div>  alert_eval_interval = <span style="color:#4ade80">300</span> ← 评估间隔(秒)</div>
+        <div style="color:var(--amber-light);margin-top:8px">[推送配置]</div>
+        <div>  smtp_host = <span style="color:#9cdcfe">smtp.example.com</span></div>
+        <div>  webhook_enabled = <span style="color:#4ade80">true</span></div>
+      </div>
+    </div>
+    <div class="feat-text">
+      <span class="tag tag-blue">即时生效</span>
+      <h3>全局系统参数 + 推送通道</h3>
+      <p>不用重启，不用改代码，所有参数从 Web UI 直接修改，下一个调度周期自动生效。</p>
+      <ul class="feat-bullets">
+        <li>系统设置：自动 EXPLAIN Top-N、锁采集间隔、告警评估周期、数据保留天数</li>
+        <li>推送配置：SMTP 邮件（SMTP 服务器 / 端口 / TLS / 发件人）</li>
+        <li>推送配置：Webhook URL + HMAC 签名密钥（钉钉 / 飞书 / 企微 / 自定义）</li>
+        <li>敏感字段（密码、密钥）密码框掩码显示 + 眼睛切换</li>
+        <li>仅超级管理员可修改，普通用户只读</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     NEW: Cross-Node Distributed Diagnostics
+     ════════════════════════════════════════════════════════ -->
+<section class="sec feat-section" id="crossnode" style="background: var(--bg);">
+  <div class="sec-header">
+    <span class="eyebrow">Distributed Diagnostics</span>
+    <h2>跨节点诊断 &middot; 完全 Agentless</h2>
+    <p>集群拓扑收窄关联范围，多维置信度评分定位分布式慢查询链路</p>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-text">
+      <span class="tag tag-green">D + B 组合</span>
+      <h3>不改应用代码的跨节点关联</h3>
+      <p><strong>D（集群拓扑）是地基</strong>：自动检测 Primary / Replica / Shard 角色，client_host 采集。只有同集群节点才做关联，收窄 JOIN 范围。</p>
+      <p><strong>B（增强关联）是能力</strong>：在同一个 cluster_id 内的节点间做 <span style="color:var(--amber)">4 维置信度评分</span>：</p>
+      <ul class="feat-bullets">
+        <li>client_host 相同 → +40% 权重（同一应用机器必为同一业务链路）</li>
+        <li>时间差 &lt; 200ms → +25% 权重</li>
+        <li>WHERE 值匹配 → +30% 权重（同一业务主键同时出现在两个节点）</li>
+        <li>DB user 相同 → +5% 权重</li>
+      </ul>
+      <p style="margin-top:8px;color:var(--amber);font-size:13px">置信度评分 &ge; 60 才展示，前端色带区分深浅</p>
+    </div>
+    <div class="demo-qan" style="padding:16px">
+      <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:10px">跨节点关联结果</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.15);border-radius:6px">
+          <span style="background:#10b981;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">P</span>
+          <span style="color:#9cdcfe;font-size:12px;font-family:var(--font-mono)">UPDATE orders SET...</span>
+          <span style="font-size:11px;color:#4ade80;margin-left:auto;font-weight:600">95%</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.12);border-radius:6px">
+          <span style="background:#3b82f6;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">R</span>
+          <span style="color:#9cdcfe;font-size:12px;font-family:var(--font-mono)">UPDATE orders SET...</span>
+          <span style="font-size:11px;color:var(--amber-light);margin-left:auto;font-weight:600">80%</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:6px">
+          <span style="background:#a855f7;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">S</span>
+          <span style="color:#9cdcfe;font-size:12px;font-family:var(--font-mono)">SELECT * FROM inv...</span>
+          <span style="font-size:11px;color:#6b7280;margin-left:auto;font-weight:600">65%</span>
+        </div>
+        <div style="font-size:10px;color:var(--amber-light);margin-top:4px;text-align:center">
+          分布式锁：跨节点三要素匹配 → 确定性 100%
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     NEW: Advisor — Security & Performance Checks
+     ════════════════════════════════════════════════════════ -->
+<section class="sec feat-section" id="advisor">
+  <div class="sec-header">
+    <span class="eyebrow">Advisor</span>
+    <h2>安全巡检 &middot; 17 条规则</h2>
+    <p>自动检测 MySQL / PostgreSQL 安全漏洞与配置违规，对标 PMM Advisor 标准</p>
+  </div>
+  <div class="feat-grid reverse">
+    <div class="demo-alert-stack" style="max-height:360px;overflow:auto">
+      <div class="demo-alert-card firing">
+        <span class="sev" style="background:#dc2626"></span>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#fff">Root 可远程连接 (root@172.16.%)</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.3);font-family:var(--font-mono)">mariadb-prod-01 &middot; 5 分前发现</div>
+        </div>
+        <span style="margin-left:auto;font-size:10px;color:#f87171;font-weight:700;white-space:nowrap">ERROR</span>
+      </div>
+      <div class="demo-alert-card firing">
+        <span class="sev" style="background:#ea580c"></span>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#fff">明文传输: require_secure_transport = OFF</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.3);font-family:var(--font-mono)">mariadb-prod-01 &middot; 5 分前发现</div>
+        </div>
+        <span style="margin-left:auto;font-size:10px;color:var(--orange);font-weight:700;white-space:nowrap">WARN</span>
+      </div>
+      <div class="demo-alert-card resolved">
+        <span class="sev" style="background:#16a34a"></span>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--green)">local_infile 已禁用 ✓ (已修复)</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.3);font-family:var(--font-mono)">mariadb-prod-01 &middot; 1 小时前修复</div>
+        </div>
+        <span style="margin-left:auto;font-size:10px;color:var(--green);font-weight:700;white-space:nowrap">RESOLVED</span>
+      </div>
+      <div class="demo-alert-card" style="border:1px solid rgba(255,255,255,.06);padding:14px 18px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.5)">
+        <span style="color:var(--amber-light);font-weight:600">17 条规则</span>
+        覆盖 MySQL 安全认证、配置安全、PostgreSQL 超级用户、SSL、CVE 版本检查
+      </div>
+    </div>
+    <div class="feat-text">
+      <span class="tag tag-red">Security</span>
+      <h3>对标 PMM Advisor 的安全巡检</h3>
+      <p>告别 Starlark 子进程和 gRPC agent。PharosDB 用纯 Python + SQL 表达式引擎，复用 collector 连接池，直接对目标数据库执行安全检查。</p>
+      <ul class="feat-bullets">
+        <li><strong>MySQL 安全认证</strong>：匿名用户 / 无密码 / Root 远程 / 全网开放 / 超级权限 / SSL</li>
+        <li><strong>MySQL 配置安全</strong>：明文传输 / 密码策略 / 密码过期 / local_infile</li>
+        <li><strong>PostgreSQL 安全</strong>：超级用户 / trust 认证 / public schema / SSL / CVE 版本</li>
+        <li><strong>通用配置</strong>：连接数阈值 / Binlog 检查</li>
+        <li>支持 EXISTS 模式（有行即问题）和 THRESHOLD 模式（超阈值即问题）</li>
+        <li>基于 PMM v3.8 安全检查 YAML 提取 SQL，语义完全对齐</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
 <!-- ═══ Tech Stack ═══ -->
 <section class="sec" id="tech">
   <div class="sec-header fade-in">
@@ -1034,8 +1231,10 @@ body {
     <a href="#locks">锁拓扑</a>
     <a href="#plans">执行计划</a>
     <a href="#indexes">索引优化</a>
-    <a href="#alerts">告警</a>
-    <a href="#architecture">架构</a>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#crossnode">跨节点</a>
+    <a href="#advisor">巡检</a>
+    <a href="#settings">全局设置</a>
     <a href="https://github.com/1wu-davy-2/PharosDB/tree/main/docs" target="_blank">文档</a>
     <a href="https://github.com/1wu-davy-2/PharosDB" target="_blank">GitHub</a>
   </div>
