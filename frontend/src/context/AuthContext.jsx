@@ -5,7 +5,7 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [ips, setIps] = useState(null);       // IP info from login response
+  const [ips, setIps] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // ── Restore session from stored token ──
@@ -15,7 +15,6 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
-    // Restore saved IP info if available
     const savedIps = localStorage.getItem("pharos_ips");
     if (savedIps) {
       try { setIps(JSON.parse(savedIps)); } catch { /* ignore */ }
@@ -70,4 +69,18 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
+}
+
+/**
+ * Permission hook — check if current user has a given permission code.
+ *
+ * @param {string} code  e.g. "instances:create", "advisor:run"
+ * @returns {boolean}
+ */
+export function usePerm(code) {
+  const { user } = useAuth();
+  if (!user) return false;
+  // superusers bypass all checks
+  if (user.is_superuser) return true;
+  return (user.permissions || []).includes(code);
 }

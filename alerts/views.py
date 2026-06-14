@@ -4,12 +4,24 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
+from accounts.permissions import HasPermission
 from .models import AlertEvent, AlertRule
 from .serializers import AlertEventSerializer, AlertRuleSerializer
 
 
 class AlertRuleViewSet(ModelViewSet):
     serializer_class = AlertRuleSerializer
+    permission_classes = [HasPermission]
+    permission_map = {
+        "list": "alerts:view",
+        "retrieve": "alerts:view",
+        "create": "alerts:create",
+        "update": "alerts:edit",
+        "partial_update": "alerts:edit",
+        "destroy": "alerts:delete",
+        "test_evaluate": "alerts:create",
+        "toggle_enabled": "alerts:toggle",
+    }
 
     def get_queryset(self):
         return (
@@ -61,6 +73,12 @@ class AlertEventViewSet(
     GenericViewSet,
 ):
     serializer_class = AlertEventSerializer
+    permission_classes = [HasPermission]
+    permission_map = {
+        "list": "alerts:view",
+        "retrieve": "alerts:view",
+        "summary": "alerts:view",
+    }
 
     def get_queryset(self):
         qs = AlertEvent.objects.select_related("rule", "instance").order_by("-fired_at")

@@ -3,27 +3,19 @@
 from rest_framework import permissions, status, views
 from rest_framework.response import Response
 
+from accounts.permissions import HasPermission
 from .models import SystemConfig
 from .serializers import SystemConfigSerializer
-
-
-class IsSuperAdmin(permissions.BasePermission):
-    """仅超级管理员可修改全局配置，普通用户只读。"""
-
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return request.user and request.user.is_authenticated
-        return (
-            request.user
-            and request.user.is_authenticated
-            and request.user.is_superuser
-        )
 
 
 class ConfigView(views.APIView):
     """GET/PUT /api/config/ — 查询或批量更新全局配置。"""
 
-    permission_classes = [IsSuperAdmin]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    permission_map = {
+        "GET": "settings:view",
+        "PUT": "settings:write",
+    }
 
     def get(self, request):
         """获取所有配置项（按分类排序）。"""

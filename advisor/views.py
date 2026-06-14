@@ -3,6 +3,7 @@
 from rest_framework import permissions, status, views
 from rest_framework.response import Response
 
+from accounts.permissions import HasPermission
 from .models import AdvisorCheck, AdvisorFinding, InstanceGroup, ScheduledRunLog
 from .runner import run_all_checks, run_check_on_instance, run_check_for_group
 
@@ -14,7 +15,8 @@ from .runner import run_all_checks, run_check_on_instance, run_check_for_group
 class CheckListView(views.APIView):
     """GET /api/advisor/checks/ — 所有巡检规则及最近统计。"""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "advisor:view"
 
     def get(self, request):
         checks = AdvisorCheck.objects.all().prefetch_related("target_groups").order_by("category", "severity", "name")
@@ -53,12 +55,10 @@ class CheckListView(views.APIView):
 
 
 class ToggleCheckView(views.APIView):
-    """POST /api/advisor/checks/toggle/ — 启停巡检规则。
+    """POST /api/advisor/checks/toggle/ — 启停巡检规则。"""
 
-    {"name": "mysql_anonymous_user", "enabled": false}
-    """
-
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "advisor:toggle"
 
     def post(self, request):
         name = request.data.get("name", "")
@@ -81,12 +81,10 @@ class ToggleCheckView(views.APIView):
 
 
 class CheckTargetingView(views.APIView):
-    """PUT /api/advisor/checks/<id>/targeting/ — 配置巡检规则的目标分组。
+    """PUT /api/advisor/checks/<id>/targeting/ — 配置巡检规则的目标分组。"""
 
-    {"group_ids": [1, 2]}  空数组 = 全部实例
-    """
-
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "advisor:targeting"
 
     def put(self, request, pk):
         try:
@@ -115,12 +113,10 @@ class CheckTargetingView(views.APIView):
 # ═══════════════════════════════════════════════════════════════════
 
 class FindingListView(views.APIView):
-    """GET /api/advisor/findings/ — 巡检发现列表。
+    """GET /api/advisor/findings/ — 巡检发现列表。"""
 
-    ?severity=critical,error &family=mysql &instance_id=1 &category=security
-    """
-
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "advisor:view"
 
     def get(self, request):
         qs = AdvisorFinding.objects.select_related("advisor_check", "instance").all()
@@ -173,7 +169,8 @@ class FindingListView(views.APIView):
 class SummaryView(views.APIView):
     """GET /api/advisor/summary/ — 巡检概览统计。"""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "advisor:view"
 
     def get(self, request):
         from django.db.models import Count
@@ -221,13 +218,10 @@ class SummaryView(views.APIView):
 # ═══════════════════════════════════════════════════════════════════
 
 class RunCheckView(views.APIView):
-    """POST /api/advisor/run/ — 手动触发巡检。
+    """POST /api/advisor/run/ — 手动触发巡检。"""
 
-    {"action": "all"}  或  {"action": "single", "check_name": "...", "instance_id": 1}
-    或  {"action": "group", "group_id": 1}
-    """
-
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "advisor:run"
 
     def post(self, request):
         action = request.data.get("action", "all")
@@ -276,11 +270,10 @@ class RunCheckView(views.APIView):
 # ═══════════════════════════════════════════════════════════════════
 
 class GroupListView(views.APIView):
-    """GET /api/advisor/groups/ — 列出所有分组。
-    POST /api/advisor/groups/ — 创建分组。
-    """
+    """GET /api/advisor/groups/ — 列出所有分组。POST /api/advisor/groups/ — 创建分组。"""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    permission_map = {"GET": "advisor:view", "POST": "advisor:groups"}
 
     def get(self, request):
         groups = InstanceGroup.objects.prefetch_related("instances", "checks").all()
@@ -331,11 +324,10 @@ class GroupListView(views.APIView):
 
 
 class GroupDetailView(views.APIView):
-    """PUT /api/advisor/groups/<id>/ — 更新分组。
-    DELETE /api/advisor/groups/<id>/ — 删除分组。
-    """
+    """PUT /api/advisor/groups/<id>/ — 更新分组。DELETE /api/advisor/groups/<id>/ — 删除分组。"""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "advisor:groups"
 
     def put(self, request, pk):
         try:
@@ -401,7 +393,8 @@ def _group_to_dict(group):
 class SchedulerStatusView(views.APIView):
     """GET /api/advisor/scheduler/status/ — 调度器状态 + 最近的执行日志。"""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "advisor:view"
 
     def get(self, request):
         try:
@@ -433,12 +426,10 @@ class SchedulerStatusView(views.APIView):
 
 
 class SchedulerToggleView(views.APIView):
-    """POST /api/advisor/scheduler/toggle/ — 启停调度器。
+    """POST /api/advisor/scheduler/toggle/ — 启停调度器。"""
 
-    {"enabled": true}
-    """
-
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "advisor:run"
 
     def post(self, request):
         enabled = request.data.get("enabled", True)

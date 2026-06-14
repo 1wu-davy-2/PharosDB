@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
+import { usePerm } from "../context/AuthContext";
 import { resolveDbIcon, resolveDbLabel } from "../assets/DbIcons";
 import "./InstancesPage.css";
 
@@ -28,6 +29,11 @@ const ENV_OPTIONS = [
 
 export default function InstancesPage() {
   const { t } = useTranslation();
+  const canCreate = usePerm("instances:create");
+  const canEdit = usePerm("instances:edit");
+  const canDelete = usePerm("instances:delete");
+  const canTest = usePerm("instances:test");
+  const canCollect = usePerm("instances:collect");
   const [instances, setInstances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -221,10 +227,12 @@ export default function InstancesPage() {
             )}
           </div>
 
-          <button className="inst-add-btn" onClick={() => { setEditing(null); setShowModal(true); }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
-            {t("instances.register")}
-          </button>
+          {canCreate && (
+            <button className="inst-add-btn" onClick={() => { setEditing(null); setShowModal(true); }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+              {t("instances.register")}
+            </button>
+          )}
         </div>
 
         {/* ── table ── */}
@@ -351,13 +359,15 @@ export default function InstancesPage() {
 
                         {/* Actions — icon buttons */}
                         <td className="inst-td-actions">
-                          <button
-                            className="inst-act-btn inst-act-btn--collect"
-                            title={t("instances.btn_collect")}
-                            onClick={() => handleCollect(inst.id)}
-                          >
-                            <span className="material-symbols-outlined">sync</span>
-                          </button>
+                          {canCollect && (
+                            <button
+                              className="inst-act-btn inst-act-btn--collect"
+                              title={t("instances.btn_collect")}
+                              onClick={() => handleCollect(inst.id)}
+                            >
+                              <span className="material-symbols-outlined">sync</span>
+                            </button>
+                          )}
                           <button
                             className={`inst-act-btn ${expandedHistory === inst.id ? "inst-act-btn--on" : ""}`}
                             title={t("instances.btn_history")}
@@ -365,20 +375,24 @@ export default function InstancesPage() {
                           >
                             <span className="material-symbols-outlined">schedule</span>
                           </button>
-                          <button
-                            className="inst-act-btn"
-                            title={t("common.edit")}
-                            onClick={() => { setEditing(inst); setShowModal(true); }}
-                          >
-                            <span className="material-symbols-outlined">edit</span>
-                          </button>
-                          <button
-                            className="inst-act-btn inst-act-btn--del"
-                            title={t("common.delete")}
-                            onClick={() => handleDelete(inst.id)}
-                          >
-                            <span className="material-symbols-outlined">delete</span>
-                          </button>
+                          {canEdit && (
+                            <button
+                              className="inst-act-btn"
+                              title={t("common.edit")}
+                              onClick={() => { setEditing(inst); setShowModal(true); }}
+                            >
+                              <span className="material-symbols-outlined">edit</span>
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              className="inst-act-btn inst-act-btn--del"
+                              title={t("common.delete")}
+                              onClick={() => handleDelete(inst.id)}
+                            >
+                              <span className="material-symbols-outlined">delete</span>
+                            </button>
+                          )}
                         </td>
                       </tr>
 
@@ -664,11 +678,13 @@ function InstanceModal({ instance, onClose, onSaved }) {
 
           <div className="inst-modal-foot">
             <button type="button" className="inst-btn-ghost" onClick={onClose}>{t("common.cancel")}</button>
-            <button type="button" className="inst-btn-ghost"
-              disabled={testing || !form.host || (!instance && !form.password)}
-              onClick={handleTestConfig}>
-              {testing ? t("common.loading") : t("instances.btn_test")}
-            </button>
+            {canTest && (
+              <button type="button" className="inst-btn-ghost"
+                disabled={testing || !form.host || (!instance && !form.password)}
+                onClick={handleTestConfig}>
+                {testing ? t("common.loading") : t("instances.btn_test")}
+              </button>
+            )}
             <button type="submit" className="inst-btn-primary" disabled={saving}>
               {saving ? t("common.saving") : t("common.save")}
             </button>

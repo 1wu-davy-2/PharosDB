@@ -254,3 +254,19 @@
   cursor: pointer;
 }
 .admin-modal-cancel:hover { background: var(--color-surface-subtle); }
+
+/* ── Role select ── */
+.admin-role-cell { vertical-align: middle; }
+.admin-role-sel {
+  padding: 3px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  min-width: 100px;
+}
+.admin-role-sel:focus { border-color: var(--color-accent); }

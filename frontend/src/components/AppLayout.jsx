@@ -14,16 +14,28 @@ const Icon = ({ name, size = 20 }) => (
 function Sidebar({ collapsed, onToggle }) {
   const { t } = useTranslation();
   const { user } = useAuth();
+  // usePerm needs to be called inside component; inline helper
+  const has = (code) => {
+    if (!user) return false;
+    if (user.is_superuser) return true;
+    return (user.permissions || []).includes(code);
+  };
   const navItems = [
     { icon: "dashboard", label: t("nav.dashboard"), to: "/" },
     { icon: "query_stats", label: t("nav.qan"), to: "/qan" },
     { icon: "storage", label: t("nav.instances"), to: "/instances" },
     { icon: "device_hub", label: t("nav.locks"), to: "/locks" },
     { icon: "notifications", label: t("nav.alerts"), to: "/alerts" },
-    { icon: "verified_user", label: t("nav.advisor"), to: "/advisor" },
-    { icon: "tune", label: t("nav.settings"), to: "/settings" },
-    // System admin — superuser only
-    ...(user?.is_superuser
+    // Advisor — requires advisor:view
+    ...(has("advisor:view")
+      ? [{ icon: "verified_user", label: t("nav.advisor"), to: "/advisor" }]
+      : []),
+    // Settings — requires settings:view
+    ...(has("settings:view")
+      ? [{ icon: "tune", label: t("nav.settings"), to: "/settings" }]
+      : []),
+    // System admin — requires system:view
+    ...(has("system:view")
       ? [{ icon: "manage_accounts", label: t("nav.admin"), to: "/system" }]
       : []),
   ];

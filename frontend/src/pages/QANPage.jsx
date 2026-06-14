@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
+import { usePerm } from "../context/AuthContext";
 import PlanDiffTable from "../components/PlanDiffTable";
 import "./QANPage.css";
 
@@ -132,6 +133,7 @@ function extractPlanSummary(summary) {
 
 export default function QANPage() {
   const { t } = useTranslation();
+  const canExplain = usePerm("qan:explain");
 
   const PERIODS = [
     { value: "1h", label: t("qan.period_1h") },
@@ -696,12 +698,14 @@ export default function QANPage() {
                       {t("qan.plan_mode_compare")}
                     </button>
                     <div className="qan-plan-mode-spacer" />
-                    <button
-                      className="qan-plan-mode-btn"
-                      onClick={() => { setShowExplainForm((v) => !v); setExplainResult(null); setExplainError(""); }}
-                    >
-                      {t("qan.plan_manual_collect")}
-                    </button>
+                    {canExplain && (
+                      <button
+                        className="qan-plan-mode-btn"
+                        onClick={() => { setShowExplainForm((v) => !v); setExplainResult(null); setExplainError(""); }}
+                      >
+                        {t("qan.plan_manual_collect")}
+                      </button>
+                    )}
                   </div>
 
                   {planLoading ? (
@@ -734,17 +738,19 @@ export default function QANPage() {
                           </li>
                         </ul>
 
-                        <div className="qan-no-plan-action">
-                          <span>{t("qan.no_plan_action")}</span>
-                          <button
-                            className="qan-plan-collect-submit"
-                            onClick={() => { setShowExplainForm(true); setExplainError(""); setExplainResult(null); }}
-                            style={{ whiteSpace: "nowrap" }}
-                          >
-                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>play_arrow</span>
-                            {t("qan.plan_manual_collect")}
-                          </button>
-                        </div>
+                        {canExplain && (
+                          <div className="qan-no-plan-action">
+                            <span>{t("qan.no_plan_action")}</span>
+                            <button
+                              className="qan-plan-collect-submit"
+                              onClick={() => { setShowExplainForm(true); setExplainError(""); setExplainResult(null); }}
+                              style={{ whiteSpace: "nowrap" }}
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>play_arrow</span>
+                              {t("qan.plan_manual_collect")}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : (

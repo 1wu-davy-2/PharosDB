@@ -2,17 +2,22 @@
 Accounts app views — login / logout / me / change-password / admin user management.
 """
 from django.contrib.auth.models import User
+from django.db import models
 from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import LoginAttempt
+from .models import LoginAttempt, UserRole, UserProfile
+from .permissions import HasPermission, get_user_permissions
 from .serializers import (
     AdminCreateUserSerializer,
     AdminResetPasswordSerializer,
     AdminUserListSerializer,
     ChangePasswordSerializer,
     LoginSerializer,
+    RoleSerializer,
+    RoleUpdateSerializer,
+    UserRoleAssignmentSerializer,
     UserSerializer,
 )
 from .utils import get_client_ip, get_client_ip_info
@@ -60,6 +65,7 @@ class LoginView(views.APIView):
                     "username": user.username,
                     "email": user.email,
                     "is_superuser": user.is_superuser,
+                    "permissions": sorted(get_user_permissions(user)),
                 },
                 "ips": get_client_ip_info(request),
             }
@@ -166,11 +172,10 @@ class ChangePasswordView(views.APIView):
 # ═══════════════════════════════════════════════════════════════════
 
 class UserListView(views.APIView):
-    """GET /api/auth/users/ — 列出所有用户。
-    POST /api/auth/users/ — 创建新用户。
-    """
+    """GET /api/auth/users/ — 列出所有用户。POST /api/auth/users/ — 创建新用户。"""
 
-    permission_classes = [permissions.IsAuthenticated, IsSuperUser]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    permission_map = {"GET": "system:view", "POST": "system:users"}
 
     def get(self, request):
         users = User.objects.all().order_by("-date_joined")
@@ -201,11 +206,10 @@ class UserListView(views.APIView):
 
 
 class UserDetailView(views.APIView):
-    """DELETE /api/auth/users/<id>/ — 删除用户（或禁用）。
-    支持查询参数 ?action=deactivate 改为禁用而非删除。
-    """
+    """DELETE /api/auth/users/<id>/ — 删除用户（或禁用）。"""
 
-    permission_classes = [permissions.IsAuthenticated, IsSuperUser]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "system:users"
 
     def delete(self, request, pk):
         try:
@@ -229,7 +233,8 @@ class UserDetailView(views.APIView):
 class UserResetPasswordView(views.APIView):
     """PUT /api/auth/users/<id>/reset-password/ — 管理员强制重置用户密码。"""
 
-    permission_classes = [permissions.IsAuthenticated, IsSuperUser]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "system:users"
 
     def put(self, request, pk):
         try:
@@ -249,7 +254,8 @@ class UserResetPasswordView(views.APIView):
 class UserUnlockView(views.APIView):
     """POST /api/auth/users/<id>/unlock/ — 清除用户的所有登录失败记录。"""
 
-    permission_classes = [permissions.IsAuthenticated, IsSuperUser]
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "system:users"
 
     def post(self, request, pk):
         try:
@@ -265,4 +271,113 @@ class UserUnlockView(views.APIView):
             "status": "ok",
             "detail": f"已清除 {user.username} 的 {deleted} 条登录失败记录。",
             "cleared": deleted,
+        })
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Role management (system:users permission required)
+# ═══════════════════════════════════════════════════════════════════
+
+class RoleListView(views.APIView):
+    """GET /api/auth/roles/ — 列出所有角色。"""
+
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "system:view"
+
+    def get(self, request):
+        roles = UserRole.objects.annotate(
+            user_count=models.Count("users")
+        ).order_by("-is_builtin", "name")
+
+        data = []
+        for r in roles:
+            data.append({
+                "id": r.id,
+                "name": r.name,
+                "display_name": r.display_name,
+                "description": r.description,
+                "permissions": r.permissions,
+                "is_builtin": r.is_builtin,
+                "user_count": r.user_count,
+            })
+        return Response({"roles": data})
+
+
+class RoleDetailView(views.APIView):
+    """PUT /api/auth/roles/<id>/ — 更新角色权限（仅 builtin=False 的角色）。"""
+
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "system:users"
+
+    def put(self, request, pk):
+        try:
+            role = UserRole.objects.get(pk=pk)
+        except UserRole.DoesNotExist:
+            return Response({"error": "角色不存在"}, status=404)
+
+        serializer = RoleUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        role.permissions = serializer.validated_data["permissions"]
+        role.save(update_fields=["permissions"])
+
+        return Response({
+            "status": "ok",
+            "role": {
+                "id": role.id,
+                "name": role.name,
+                "display_name": role.display_name,
+                "permissions": role.permissions,
+                "is_builtin": role.is_builtin,
+            },
+        })
+
+
+class UserRoleAssignmentView(views.APIView):
+    """PUT /api/auth/users/<id>/role/ — 为用户分配角色。"""
+
+    permission_classes = [permissions.IsAuthenticated, HasPermission]
+    required_permission = "system:users"
+
+    def put(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"error": "用户不存在"}, status=404)
+
+        serializer = UserRoleAssignmentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        role_id = serializer.validated_data["role_id"]
+
+        try:
+            role = UserRole.objects.get(pk=role_id)
+        except UserRole.DoesNotExist:
+            return Response({"error": "角色不存在"}, status=404)
+
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.role = role
+        profile.save(update_fields=["role"])
+
+        return Response({
+            "status": "ok",
+            "user_id": user.id,
+            "username": user.username,
+            "role_id": role.id,
+            "role_name": role.display_name,
+        })
+
+    def delete(self, request, pk):
+        """移除用户角色（回到无权限状态）。"""
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"error": "用户不存在"}, status=404)
+
+        profile = getattr(user, "profile", None)
+        if profile:
+            profile.role = None
+            profile.save(update_fields=["role"])
+
+        return Response({
+            "status": "ok",
+            "detail": f"已移除 {user.username} 的角色。",
         })

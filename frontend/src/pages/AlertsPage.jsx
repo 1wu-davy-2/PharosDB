@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
+import { usePerm } from "../context/AuthContext";
 import "./AlertsPage.css";
 
 const RULE_TYPES = [
@@ -47,6 +48,11 @@ export default function AlertsPage() {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
+
+  const canCreateAlert = usePerm("alerts:create");
+  const canEditAlert = usePerm("alerts:edit");
+  const canDeleteAlert = usePerm("alerts:delete");
+  const canToggleAlert = usePerm("alerts:toggle");
 
   const loadAll = useCallback(() => {
     setLoading(true);
@@ -134,7 +140,7 @@ export default function AlertsPage() {
             告警事件
             {summary.total > 0 && <span className="alert-badge">{summary.total}</span>}
           </button>
-          {tab === "rules" && (
+          {tab === "rules" && canCreateAlert && (
             <button className="btn btn-primary btn-sm" style={{ marginLeft: "auto", marginRight: 16 }}
               onClick={() => { setEditing(null); setShowModal(true); }}>
               <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add</span>
@@ -159,6 +165,9 @@ export default function AlertsPage() {
             onDelete={handleDelete}
             onToggle={handleToggle}
             onTest={handleTest}
+            canEdit={canEditAlert}
+            canDelete={canDeleteAlert}
+            canToggle={canToggleAlert}
           />
         )}
 
@@ -180,7 +189,7 @@ export default function AlertsPage() {
 }
 
 /* ═══ 规则列表 ═══ */
-function RulesTable({ rules, loading, onEdit, onDelete, onToggle, onTest }) {
+function RulesTable({ rules, loading, onEdit, onDelete, onToggle, onTest, canEdit, canDelete, canToggle }) {
   if (loading) return <div className="loading-wrap"><div className="mini-spinner" /> 加载中...</div>;
   if (!rules.length) return (
     <div className="empty-state">
@@ -232,9 +241,9 @@ function RulesTable({ rules, loading, onEdit, onDelete, onToggle, onTest }) {
               <td style={{ textAlign: "right" }}>
                 <div className="action-group">
                   <button className="btn btn-sm" onClick={() => onTest(r.id)} title="测试规则">测试</button>
-                  <button className="btn btn-sm" onClick={() => onToggle(r.id)}>{r.is_enabled ? "禁用" : "启用"}</button>
-                  <button className="btn btn-sm" onClick={() => onEdit(r)}>编辑</button>
-                  <button className="btn btn-sm btn-danger" onClick={() => onDelete(r.id)}>删除</button>
+                  {canToggle && <button className="btn btn-sm" onClick={() => onToggle(r.id)}>{r.is_enabled ? "禁用" : "启用"}</button>}
+                  {canEdit && <button className="btn btn-sm" onClick={() => onEdit(r)}>编辑</button>}
+                  {canDelete && <button className="btn btn-sm btn-danger" onClick={() => onDelete(r.id)}>删除</button>}
                 </div>
               </td>
             </tr>

@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.permissions import HasPermission
 from .crypto import decrypt
 from .models import CollectionHistory, DatabaseInstance
 from .serializers import DatabaseInstanceSerializer
@@ -23,6 +24,19 @@ class DatabaseInstanceViewSet(viewsets.ModelViewSet):
 
     queryset = DatabaseInstance.objects.all()
     serializer_class = DatabaseInstanceSerializer
+    permission_classes = [HasPermission]
+    permission_map = {
+        "list":   "instances:view",
+        "retrieve": "instances:view",
+        "create": "instances:create",
+        "update": "instances:edit",
+        "partial_update": "instances:edit",
+        "destroy": "instances:delete",
+        "test_connection": "instances:test",
+        "collect_now": "instances:collect",
+        "history": "instances:view",
+        "test_config": "instances:test",
+    }
     filterset_fields = {
         "db_type":            ["exact"],
         "environment":        ["exact"],

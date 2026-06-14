@@ -1,6 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.permissions import HasPermission
 from . import cross_services, plan_services, services
 
 
@@ -123,12 +124,10 @@ class PlanCompareView(APIView):
 
 
 class ManualExplainView(APIView):
-    """POST /api/qan/explain/
+    """POST /api/qan/explain/"""
 
-    请求体: {"service": "mariadb-prod-01", "digest": "c0b20c18...", "sql": "..."}
-    至少提供 sql（直接 EXPLAIN），或 digest + service（从 history_long 查 SQL 再 EXPLAIN）。
-    实时连接目标实例执行 EXPLAIN，返回完整 JSON + 结构摘要。
-    """
+    permission_classes = [HasPermission]
+    required_permission = "qan:explain"
 
     def post(self, request):
         sql_text = (request.data.get("sql") or "").strip()

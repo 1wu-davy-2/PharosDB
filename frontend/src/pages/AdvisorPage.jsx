@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
+import { usePerm } from "../context/AuthContext";
 import "./AdvisorPage.css";
 
 /* ── 严重度映射 ── */
@@ -22,6 +23,11 @@ const CAT_LABELS_EN = { security: "Security", configuration: "Config", performan
 export default function AdvisorPage() {
   const { t, i18n } = useTranslation();
   const isZh = i18n.language === "zh";
+
+  const canRun = usePerm("advisor:run");
+  const canToggle = usePerm("advisor:toggle");
+  const canTargeting = usePerm("advisor:targeting");
+  const canGroups = usePerm("advisor:groups");
 
   const [checks, setChecks] = useState([]);
   const [findings, setFindings] = useState([]);
@@ -230,12 +236,14 @@ export default function AdvisorPage() {
               </span>
             )}
           </div>
-          <button className="advisor-scheduler-btn" onClick={handleSchedulerToggle}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-              {scheduler?.running ? "pause" : "play_arrow"}
-            </span>
-            {scheduler?.running ? t("advisor.scheduler_pause") : t("advisor.scheduler_start")}
-          </button>
+          {canRun && (
+            <button className="advisor-scheduler-btn" onClick={handleSchedulerToggle}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                {scheduler?.running ? "pause" : "play_arrow"}
+              </span>
+              {scheduler?.running ? t("advisor.scheduler_pause") : t("advisor.scheduler_start")}
+            </button>
+          )}
         </div>
 
         {/* ── Summary Bar ── */}
@@ -295,33 +303,35 @@ export default function AdvisorPage() {
           )}
 
           {/* Run button with dropdown */}
-          <div className="advisor-run-wrap" ref={runMenuRef}>
-            <button className="advisor-run-btn" onClick={() => handleRun("all")} disabled={running}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                {running ? "progress_activity" : "play_arrow"}
-              </span>
-              {running ? t("advisor.running") : t("advisor.run_all")}
-            </button>
-            {groups.length > 0 && (
-              <>
-                <button className="advisor-run-caret" onClick={() => setRunMenuOpen(!runMenuOpen)} disabled={running}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>expand_more</span>
-                </button>
-                {runMenuOpen && (
-                  <div className="advisor-run-menu">
-                    <div className="advisor-run-menu-item" onClick={() => handleRun("all")}>
-                      {t("advisor.run_all_instances")}
-                    </div>
-                    {groups.map((g) => (
-                      <div key={g.id} className="advisor-run-menu-item" onClick={() => handleRun("group", g.id)}>
-                        {t("advisor.run_group", { name: g.name })}
+          {canRun && (
+            <div className="advisor-run-wrap" ref={runMenuRef}>
+              <button className="advisor-run-btn" onClick={() => handleRun("all")} disabled={running}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                  {running ? "progress_activity" : "play_arrow"}
+                </span>
+                {running ? t("advisor.running") : t("advisor.run_all")}
+              </button>
+              {groups.length > 0 && (
+                <>
+                  <button className="advisor-run-caret" onClick={() => setRunMenuOpen(!runMenuOpen)} disabled={running}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>expand_more</span>
+                  </button>
+                  {runMenuOpen && (
+                    <div className="advisor-run-menu">
+                      <div className="advisor-run-menu-item" onClick={() => handleRun("all")}>
+                        {t("advisor.run_all_instances")}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+                      {groups.map((g) => (
+                        <div key={g.id} className="advisor-run-menu-item" onClick={() => handleRun("group", g.id)}>
+                          {t("advisor.run_group", { name: g.name })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {msg && (
@@ -379,10 +389,16 @@ export default function AdvisorPage() {
                     <div key={c.id} className={`advisor-check-card ${!c.enabled ? "advisor-check-card--disabled" : ""}`}>
                       <div className="advisor-check-header">
                         <span className="advisor-check-name">{c.display_name}</span>
-                        <label className="advisor-check-toggle">
-                          <input type="checkbox" checked={c.enabled} onChange={() => handleToggle(c.name, c.enabled)} />
-                          <span className="advisor-check-toggle-slider" />
-                        </label>
+                        {canToggle ? (
+                          <label className="advisor-check-toggle">
+                            <input type="checkbox" checked={c.enabled} onChange={() => handleToggle(c.name, c.enabled)} />
+                            <span className="advisor-check-toggle-slider" />
+                          </label>
+                        ) : (
+                          <span className="advisor-check-tag" style={{ color: c.enabled ? "#34d399" : "#9ca3af" }}>
+                            {c.enabled ? "已启用" : "已禁用"}
+                          </span>
+                        )}
                       </div>
                       <div className="advisor-check-summary">{c.summary}</div>
                       <div className="advisor-check-meta">
@@ -409,9 +425,11 @@ export default function AdvisorPage() {
                             {t("advisor.target_all")}
                           </span>
                         )}
-                        <button className="advisor-check-target-btn" onClick={() => openTargeting(c)}>
-                          {t("advisor.configure_target")}
-                        </button>
+                        {canTargeting && (
+                          <button className="advisor-check-target-btn" onClick={() => openTargeting(c)}>
+                            {t("advisor.configure_target")}
+                          </button>
+                        )}
                       </div>
                       {c.description && (
                         <div className="advisor-check-desc">{c.description}</div>
@@ -425,12 +443,14 @@ export default function AdvisorPage() {
             {/* ═══ GROUPS TAB ═══ */}
             {tab === "groups" && (
               <>
-                <div style={{ marginBottom: 12 }}>
-                  <button className="advisor-run-btn" onClick={handleCreateGroup} style={{ background: "var(--color-accent)" }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
-                    {t("advisor.group_create")}
-                  </button>
-                </div>
+                {canGroups && (
+                  <div style={{ marginBottom: 12 }}>
+                    <button className="advisor-run-btn" onClick={handleCreateGroup} style={{ background: "var(--color-accent)" }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+                      {t("advisor.group_create")}
+                    </button>
+                  </div>
+                )}
 
                 {groups.length === 0 ? (
                   <div className="empty-state" style={{ padding: 40 }}>
@@ -444,14 +464,16 @@ export default function AdvisorPage() {
                       <div key={g.id} className="advisor-group-card">
                         <div className="advisor-group-header">
                           <div className="advisor-group-name">{g.name}</div>
-                          <div className="advisor-group-actions">
-                            <button className="advisor-group-action-btn" onClick={() => handleEditGroup(g)} title={t("common.edit")}>
-                              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit</span>
-                            </button>
-                            <button className="advisor-group-action-btn advisor-group-action-btn--danger" onClick={() => handleDeleteGroup(g.id)} title={t("common.delete")}>
-                              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
-                            </button>
-                          </div>
+                          {canGroups && (
+                            <div className="advisor-group-actions">
+                              <button className="advisor-group-action-btn" onClick={() => handleEditGroup(g)} title={t("common.edit")}>
+                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit</span>
+                              </button>
+                              <button className="advisor-group-action-btn advisor-group-action-btn--danger" onClick={() => handleDeleteGroup(g.id)} title={t("common.delete")}>
+                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                         {g.description && <div className="advisor-group-desc">{g.description}</div>}
                         <div className="advisor-group-stats">

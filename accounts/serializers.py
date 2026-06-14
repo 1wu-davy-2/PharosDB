@@ -97,12 +97,17 @@ class TokenPairSerializer(TokenObtainPairSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """User profile for the /me endpoint."""
+    """User profile for the /me endpoint — includes permissions."""
+
+    permissions = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "is_superuser", "date_joined"]
-        read_only_fields = fields
+        fields = ["id", "username", "email", "is_superuser", "date_joined", "permissions"]
+
+    def get_permissions(self, user):
+        from .permissions import get_user_permissions
+        return sorted(get_user_permissions(user))
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -123,15 +128,18 @@ class ChangePasswordSerializer(serializers.Serializer):
 # ═══════════════════════════════════════════════════════════════════
 
 class AdminUserListSerializer(serializers.ModelSerializer):
-    """User list for admin page — includes failed attempt count."""
+    """User list for admin page — includes failed attempt count + role info."""
 
     failed_attempts = serializers.SerializerMethodField()
+    role_id = serializers.SerializerMethodField()
+    role_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             "id", "username", "email", "is_active", "is_superuser",
             "date_joined", "last_login", "failed_attempts",
+            "role_id", "role_name",
         ]
 
     def get_failed_attempts(self, user):
@@ -143,6 +151,18 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             success=False,
             attempted_at__gte=cutoff,
         ).count()
+
+    def get_role_id(self, user):
+        profile = getattr(user, "profile", None)
+        if profile and profile.role:
+            return profile.role_id
+        return None
+
+    def get_role_name(self, user):
+        profile = getattr(user, "profile", None)
+        if profile and profile.role:
+            return profile.role.display_name
+        return None
 
 
 class AdminCreateUserSerializer(serializers.Serializer):
@@ -165,3 +185,24 @@ class AdminResetPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(
         min_length=6, style={"input_type": "password"}, write_only=True,
     )
+
+
+class RoleSerializer(serializers.Serializer):
+    """Serialize a UserRole for the admin API."""
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    display_name = serializers.CharField(read_only=True)
+    description = serializers.CharField(read_only=True)
+    permissions = serializers.ListField(child=serializers.CharField())
+    is_builtin = serializers.BooleanField(read_only=True)
+    user_count = serializers.IntegerField(read_only=True)
+
+
+class RoleUpdateSerializer(serializers.Serializer):
+    """Update a role's permission set."""
+    permissions = serializers.ListField(child=serializers.CharField())
+
+
+class UserRoleAssignmentSerializer(serializers.Serializer):
+    """Assign a role to a user."""
+    role_id = serializers.IntegerField(required=True)

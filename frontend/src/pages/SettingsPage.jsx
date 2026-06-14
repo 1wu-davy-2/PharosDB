@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
+import { usePerm } from "../context/AuthContext";
 import "./SettingsPage.css";
 
 /* ── 分类元数据 ─────────────────────────────────────── */
@@ -136,6 +137,7 @@ const TABS = [
 
 export default function SettingsPage() {
   const { t } = useTranslation();
+  const canWrite = usePerm("settings:write");
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dirty, setDirty] = useState({});
@@ -249,16 +251,18 @@ export default function SettingsPage() {
                   {t("settings.hint")}
                 </span>
               </div>
-              <button
-                className="settings-save-btn"
-                onClick={handleSave}
-                disabled={saving || Object.keys(dirty).length === 0}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                  {saving ? "progress_activity" : "save"}
-                </span>
-                {saving ? t("common.saving") : t("settings.save")}
-              </button>
+              {canWrite && (
+                <button
+                  className="settings-save-btn"
+                  onClick={handleSave}
+                  disabled={saving || Object.keys(dirty).length === 0}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                    {saving ? "progress_activity" : "save"}
+                  </span>
+                  {saving ? t("common.saving") : t("settings.save")}
+                </button>
+              )}
             </div>
 
             {message && (

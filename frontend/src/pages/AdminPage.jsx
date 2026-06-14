@@ -1,14 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, usePerm } from "../context/AuthContext";
 import api from "../services/api";
 import AppLayout from "../components/AppLayout";
 import "./AdminPage.css";
-
-/* ═══════════════════════════════════════════════════════════════
-   AdminPage — System user management (superuser only)
-   ═══════════════════════════════════════════════════════════════ */
 
 export default function AdminPage() {
   const { t, i18n } = useTranslation();
@@ -16,8 +12,12 @@ export default function AdminPage() {
   const navigate = useNavigate();
   const isZh = i18n.language === "zh";
 
+  const canManageUsers = usePerm("system:users");
+  const canView = usePerm("system:view");
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [roles, setRoles] = useState([]);
   const [msg, setMsg] = useState(null);
 
   // Create user modal
@@ -29,19 +29,23 @@ export default function AdminPage() {
   const [resetUser, setResetUser] = useState(null);
   const [resetting, setResetting] = useState(false);
 
-  // ── Guard: non-superuser redirect ──
+  // ── Guard: need system:view permission ──
   useEffect(() => {
-    if (me && !me.is_superuser) {
+    if (me && !canView && !me.is_superuser) {
       navigate("/", { replace: true });
     }
-  }, [me, navigate]);
+  }, [me, navigate, canView]);
 
   // ── Load users ──
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get("/auth/users/");
-      setUsers(data.users || []);
+      const [usersRes, rolesRes] = await Promise.all([
+        api.get("/auth/users/"),
+        api.get("/auth/roles/"),
+      ]);
+      setUsers(usersRes.data.users || []);
+      setRoles(rolesRes.data.roles || []);
     } catch {
       setMsg({ type: "error", text: isZh ? "加载用户列表失败" : "Failed to load users" });
     } finally {
@@ -49,7 +53,7 @@ export default function AdminPage() {
     }
   }, [isZh]);
 
-  useEffect(() => { if (me?.is_superuser) load(); }, [load, me]);
+  useEffect(() => { if (me && canView) load(); }, [load, me, canView]);
 
   // ── Create user ──
   const handleCreate = async (e) => {
@@ -151,7 +155,21 @@ export default function AdminPage() {
     return dt.replace("T", " ").slice(0, 19);
   };
 
-  if (!me?.is_superuser) return null;
+  // ── Role assignment ──
+  const handleAssignRole = async (userId, roleId) => {
+    try {
+      if (roleId === "") {
+        await api.delete(`/auth/users/${userId}/role/`);
+      } else {
+        await api.put(`/auth/users/${userId}/role/`, { role_id: roleId });
+      }
+      load();
+    } catch (e) {
+      setMsg({ type: "error", text: e.response?.data?.error || "角色分配失败" });
+    }
+  };
+
+  if (!me?.is_superuser && !canView) return null;
 
   return (
     <AppLayout title={isZh ? "系统管理" : "System Admin"}>
@@ -170,10 +188,12 @@ export default function AdminPage() {
           <span className="admin-toolbar-count">
             {isZh ? `共 ${users.length} 个用户` : `${users.length} users total`}
           </span>
-          <button className="admin-btn admin-btn--primary" onClick={() => { setCreateOpen(true); setMsg(null); }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>person_add</span>
-            {isZh ? "创建用户" : "Create User"}
-          </button>
+          {canManageUsers && (
+            <button className="admin-btn admin-btn--primary" onClick={() => { setCreateOpen(true); setMsg(null); }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>person_add</span>
+              {isZh ? "创建用户" : "Create User"}
+            </button>
+          )}
         </div>
 
         {/* ── User table ── */}
@@ -204,10 +224,23 @@ export default function AdminPage() {
                       )}
                     </td>
                     <td className="admin-email">{u.email || "—"}</td>
-                    <td>
-                      <span className={`admin-tag ${u.is_superuser ? "admin-tag--super" : "admin-tag--user"}`}>
-                        {u.is_superuser ? (isZh ? "超管" : "Admin") : (isZh ? "普通" : "User")}
-                      </span>
+                    <td className="admin-role-cell">
+                      {canManageUsers ? (
+                        <select
+                          className="admin-role-sel"
+                          value={u.role_id || ""}
+                          onChange={(e) => handleAssignRole(u.id, e.target.value ? parseInt(e.target.value, 10) : "")}
+                        >
+                          <option value="">—</option>
+                          {roles.map((r) => (
+                            <option key={r.id} value={r.id}>{r.display_name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="admin-tag admin-tag--user">
+                          {u.role_name || (isZh ? "无角色" : "None")}
+                        </span>
+                      )}
                     </td>
                     <td>
                       <span className={`admin-status ${u.is_active ? "admin-status--active" : "admin-status--disabled"}`}>
@@ -224,28 +257,30 @@ export default function AdminPage() {
                       )}
                     </td>
                     <td>
-                      <div className="admin-actions">
-                        {u.failed_attempts > 0 && (
-                          <button className="admin-action-btn admin-action-btn--unlock" onClick={() => handleUnlock(u)} title={isZh ? "解锁" : "Unlock"}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>lock_open</span>
+                      {canManageUsers && (
+                        <div className="admin-actions">
+                          {u.failed_attempts > 0 && (
+                            <button className="admin-action-btn admin-action-btn--unlock" onClick={() => handleUnlock(u)} title={isZh ? "解锁" : "Unlock"}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>lock_open</span>
+                            </button>
+                          )}
+                          <button className="admin-action-btn admin-action-btn--reset" onClick={() => openReset(u)} title={isZh ? "重置密码" : "Reset PW"}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>key</span>
                           </button>
-                        )}
-                        <button className="admin-action-btn admin-action-btn--reset" onClick={() => openReset(u)} title={isZh ? "重置密码" : "Reset PW"}>
-                          <span className="material-symbols-outlined" style={{ fontSize: 15 }}>key</span>
-                        </button>
-                        {u.id !== me.id && (
-                          <>
-                            <button className="admin-action-btn" onClick={() => handleToggleActive(u)} title={u.is_active ? (isZh ? "禁用" : "Disable") : (isZh ? "启用" : "Enable")}>
-                              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
-                                {u.is_active ? "block" : "check_circle"}
-                              </span>
-                            </button>
-                            <button className="admin-action-btn admin-action-btn--danger" onClick={() => handleDelete(u)} title={isZh ? "删除" : "Delete"}>
-                              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>delete</span>
-                            </button>
-                          </>
-                        )}
-                      </div>
+                          {u.id !== me.id && (
+                            <>
+                              <button className="admin-action-btn" onClick={() => handleToggleActive(u)} title={u.is_active ? (isZh ? "禁用" : "Disable") : (isZh ? "启用" : "Enable")}>
+                                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
+                                  {u.is_active ? "block" : "check_circle"}
+                                </span>
+                              </button>
+                              <button className="admin-action-btn admin-action-btn--danger" onClick={() => handleDelete(u)} title={isZh ? "删除" : "Delete"}>
+                                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>delete</span>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
