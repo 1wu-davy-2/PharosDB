@@ -156,27 +156,45 @@ def _create_finding(check, instance, rows, extra_detail=""):
 
 
 # ═══════════════════════════════════════════════════════════════════
+# 实例定向
+# ═══════════════════════════════════════════════════════════════════
+
+def get_target_instances(check):
+    """根据巡检规则的分组定向，返回需要检查的实例 QuerySet。
+
+    如果 check 没有 target_groups（空 M2M），返回全部活跃已连接实例（向后兼容）。
+    如果有 target_groups，返回这些分组内实例的并集。
+    """
+    from collector.models import DatabaseInstance
+
+    base_qs = DatabaseInstance.objects.filter(is_active=True, connection_status="connected")
+
+    if check.target_groups.exists():
+        group_ids = check.target_groups.values_list("id", flat=True)
+        return base_qs.filter(instance_groups__id__in=group_ids).distinct()
+
+    return base_qs.all()
+
+
+# ═══════════════════════════════════════════════════════════════════
 # 批量巡检调度
 # ═══════════════════════════════════════════════════════════════════
 
 def run_all_checks():
-    """对全部启用实例运行全部启用规则（服务启动时 + 定时调用）。"""
-    from collector.models import DatabaseInstance
-
-    checks = AdvisorCheck.objects.filter(enabled=True)
-    instances = DatabaseInstance.objects.filter(is_active=True, connection_status="connected")
+    """对启用规则按分组定向执行巡检（手动触发 / 定时调用）。"""
+    checks = AdvisorCheck.objects.filter(enabled=True).prefetch_related("target_groups")
 
     total_findings = 0
     for check in checks:
+        targets = get_target_instances(check)
+
         # 过滤数据库类型
         if check.family == "mysql":
-            targets = instances.filter(db_type="mysql")
+            targets = targets.filter(db_type="mysql")
         elif check.family == "postgresql":
-            targets = instances.filter(db_type="postgresql")
+            targets = targets.filter(db_type="postgresql")
         elif check.family == "mongodb":
-            targets = instances.filter(db_type="mongodb")
-        else:
-            targets = instances.all()
+            targets = targets.filter(db_type="mongodb")
 
         for inst in targets:
             finding = run_check(check, inst)
@@ -198,3 +216,92 @@ def run_check_on_instance(check_name, instance_id):
         return None
 
     return run_check(check, inst)
+
+
+def run_check_for_group(check, group):
+    """对指定分组内所有符合条件的实例执行一条巡检规则。
+
+    Returns:
+        发现的 Finding 数量。
+    """
+    from .models import InstanceGroup
+
+    instances = group.instances.filter(is_active=True, connection_status="connected")
+
+    # 过滤数据库类型
+    if check.family == "mysql":
+        instances = instances.filter(db_type="mysql")
+    elif check.family == "postgresql":
+        instances = instances.filter(db_type="postgresql")
+    elif check.family == "mongodb":
+        instances = instances.filter(db_type="mongodb")
+
+    findings_count = 0
+    for inst in instances:
+        finding = run_check(check, inst)
+        if finding:
+            findings_count += 1
+
+    return findings_count
+
+
+def run_scheduled(check):
+    """定时调度执行：对一条规则按分组逐组执行并写入 ScheduledRunLog。"""
+    import time
+    from .models import ScheduledRunLog
+
+    groups = list(check.target_groups.all())
+
+    if not groups:
+        # 无分组 = 全部实例
+        started = time.time()
+        targets = get_target_instances(check)
+        if check.family != "generic":
+            targets = targets.filter(db_type=check.family)
+
+        checked = targets.count()
+        findings = 0
+        for inst in targets:
+            f = run_check(check, inst)
+            if f:
+                findings += 1
+
+        duration = int((time.time() - started) * 1000)
+        ScheduledRunLog.objects.create(
+            advisor_check=check,
+            instance_group=None,
+            instances_checked=checked,
+            findings_created=findings,
+            duration_ms=duration,
+            finished_at=djangotz.now(),
+            status="success",
+        )
+    else:
+        for group in groups:
+            started = time.time()
+            try:
+                count = run_check_for_group(check, group)
+                duration = int((time.time() - started) * 1000)
+                ScheduledRunLog.objects.create(
+                    advisor_check=check,
+                    instance_group=group,
+                    instances_checked=group.instances.filter(
+                        is_active=True, connection_status="connected",
+                    ).count(),
+                    findings_created=count,
+                    duration_ms=duration,
+                    finished_at=djangotz.now(),
+                    status="success",
+                )
+            except Exception as e:
+                logger.error(f"[advisor] 调度执行失败 check={check.name} group={group.name}: {e}")
+                ScheduledRunLog.objects.create(
+                    advisor_check=check,
+                    instance_group=group,
+                    status="failed",
+                    finished_at=djangotz.now(),
+                )
+
+    # 更新最后定时执行时间
+    check.last_scheduled_run_at = djangotz.now()
+    check.save(update_fields=["last_scheduled_run_at"])
