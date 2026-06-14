@@ -116,6 +116,11 @@
     "field_active": "启用自动采集",
     "pwd_placeholder": "留空不修改",
     "cluster_optional": "可选",
+    "field_cluster_role": "集群角色",
+    "role_standalone": "单机",
+    "role_primary": "主节点 (Primary)",
+    "role_replica": "从节点 (Replica)",
+    "role_shard": "分片 (Shard)",
     "no_history": "暂无采集记录"
   },
   "history": {
@@ -256,7 +261,18 @@
     "trend_total_time": "总耗时",
     "trend_avg_time": "平均耗时",
     "trend_max_time": "最大耗时",
-    "trend_rows": "扫描行数"
+    "trend_rows": "扫描行数",
+    "tab_cross_node": "跨节点关联",
+    "cross_node_title": "跨节点 SQL 关联",
+    "cross_node_hint": "选择集群查看跨节点关联分析",
+    "cross_node_no_cluster": "暂无可分析集群。请先在「实例管理」中给实例设置 cluster 字段。",
+    "cross_node_col_confidence": "置信度",
+    "cross_node_col_node_a": "节点 A",
+    "cross_node_col_node_b": "节点 B",
+    "cross_node_col_time_a": "耗时 A",
+    "cross_node_col_time_b": "耗时 B",
+    "cross_node_col_diff": "时间差",
+    "cross_node_no_data": "未找到显著的跨节点关联"
   },
   "settings": {
     "title": "全局设置",
@@ -303,6 +319,12 @@
     "load_failed": "加载失败",
     "detail_waiting_query": "等待方 SQL",
     "detail_blocking_query": "阻塞方 SQL",
-    "detail_lock_info": "锁信息"
+    "detail_lock_info": "锁信息",
+    "tab_global": "全局视图",
+    "global_title": "跨节点锁拓扑",
+    "global_desc": "匹配同一行数据在不同节点上的锁等待关系",
+    "global_no_cluster": "暂无可分析集群。请先在「实例管理」中给实例设置 cluster。",
+    "global_no_data": "未发现跨节点锁竞争",
+    "cross_node_edge": "跨节点锁链"
   }
 }

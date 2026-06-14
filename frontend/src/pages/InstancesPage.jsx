@@ -300,6 +300,11 @@ export default function InstancesPage() {
                         {/* Name */}
                         <td className="inst-td-name">
                           <span className="inst-name">{inst.name}</span>
+                          {inst.cluster_role && inst.cluster_role !== "standalone" && (
+                            <span className={`inst-role-tag inst-role-tag--${inst.cluster_role}`}>
+                              {inst.cluster_role === "primary" ? "P" : inst.cluster_role === "replica" ? "R" : inst.cluster_role === "shard" ? "S" : ""}
+                            </span>
+                          )}
                           {inst.cluster && <span className="inst-cluster-tag">{inst.cluster}</span>}
                         </td>
 
@@ -505,6 +510,7 @@ function InstanceModal({ instance, onClose, onSaved }) {
     password: "",
     environment: instance?.environment || "prod",
     cluster: instance?.cluster || "",
+    cluster_role: instance?.cluster_role || "standalone",
     is_active: instance?.is_active ?? true,
     collect_interval: instance?.collect_interval || 60,
   });
@@ -619,6 +625,16 @@ function InstanceModal({ instance, onClose, onSaved }) {
                 <input className="inst-form-in" value={form.cluster}
                   onChange={(e) => set("cluster", e.target.value)}
                   placeholder={t("instances.cluster_optional")} />
+              </div>
+              <div className="inst-form-g">
+                <label className="inst-form-lbl">{t("instances.field_cluster_role")}</label>
+                <select className="inst-form-sel" value={form.cluster_role || "standalone"}
+                  onChange={(e) => set("cluster_role", e.target.value)}>
+                  <option value="standalone">{t("instances.role_standalone")}</option>
+                  <option value="primary">{t("instances.role_primary")}</option>
+                  <option value="replica">{t("instances.role_replica")}</option>
+                  <option value="shard">{t("instances.role_shard")}</option>
+                </select>
               </div>
               <div className="inst-form-g">
                 <label className="inst-form-lbl">{t("instances.field_interval")}</label>

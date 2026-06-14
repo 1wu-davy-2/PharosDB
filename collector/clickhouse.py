@@ -18,7 +18,7 @@ METRICS_COLUMNS = [
     "labels.key", "labels.value",
     "agent_id", "agent_type",
     "period_start", "period_length",
-    "fingerprint", "example", "is_truncated", "example_type", "example_metrics", "tables",
+    "fingerprint", "example", "where_values", "is_truncated", "example_type", "example_metrics", "tables",
     "explain_fingerprint", "placeholders_count",
     "top_query", "query_plan", "plan_summary",
     "histogram_items",

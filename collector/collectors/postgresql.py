@@ -94,12 +94,70 @@ class PostgreSQLCollector(BaseCollector):
         )
         self.conn.autocommit = True
         self._pg_version = self._get_pg_version()
+        self._detect_role()
+        self._detect_app_hosts()
 
     def _get_pg_version(self) -> int:
         with self.conn.cursor() as cur:
             cur.execute("SHOW server_version_num")
             row = cur.fetchone()
             return int(row["server_version_num"]) // 10000
+
+    def _detect_role(self):
+        """自动检测 PG 集群角色（primary / replica / standalone）。
+
+        检查 pg_is_in_recovery() + pg_stat_wal_receiver。
+        """
+        role = "standalone"
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("SELECT pg_is_in_recovery()")
+                row = cur.fetchone()
+                is_replica = row["pg_is_in_recovery"] if row else False
+
+                if is_replica:
+                    # 进一步区分 replica vs standalone（shard 无法自动检测，需人工标记）
+                    cur.execute(
+                        "SELECT COUNT(*) FROM pg_stat_wal_receiver WHERE status = 'streaming'"
+                    )
+                    wal_row = cur.fetchone()
+                    has_wal = wal_row and wal_row["count"] > 0
+                    role = "replica" if has_wal else "replica"
+                else:
+                    # 检查是否有 streaming replicas 连接（说明这是 primary）
+                    cur.execute("SELECT COUNT(*) FROM pg_stat_replication")
+                    repl_row = cur.fetchone()
+                    has_replicas = repl_row and repl_row["count"] > 0
+                    role = "primary" if has_replicas else "primary"
+
+            if self.instance.cluster_role != role:
+                from collector.models import DatabaseInstance
+                DatabaseInstance.objects.filter(pk=self.instance.id).update(cluster_role=role)
+                self.instance.cluster_role = role
+        except Exception:
+            pass
+
+    def _detect_app_hosts(self):
+        """从 pg_stat_activity 获取当前连接的应用端 IP 列表。"""
+        self._app_hosts = []
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    "SELECT client_addr, COUNT(*) AS cnt "
+                    "FROM pg_stat_activity "
+                    "WHERE client_addr IS NOT NULL "
+                    "  AND usename NOT IN ('postgres', 'replication') "
+                    "  AND state != 'idle' "
+                    "GROUP BY client_addr ORDER BY cnt DESC LIMIT 10"
+                )
+                rows = cur.fetchall()
+                # RealDictCursor returns dicts, but rows could be tuples
+                for row in rows:
+                    ip = row.get("client_addr") if isinstance(row, dict) else str(row[0])
+                    if ip:
+                        self._app_hosts.append(ip)
+        except Exception:
+            self._app_hosts = []
 
     def collect(self) -> list[dict]:
         sql = SUMMARIES_SQL_PG13_EXTRA if self._pg_version >= 13 else SUMMARIES_SQL
@@ -203,7 +261,7 @@ class PostgreSQLCollector(BaseCollector):
             "database": raw.get("schema_name") or "",
             "schema": raw.get("schema_name") or "",
             "username": "",
-            "client_host": "",
+            "client_host": self._app_hosts[0] if self._app_hosts else "",
             "replication_set": "",
             "cluster": instance.cluster or "",
             "service_type": "postgresql",
@@ -220,6 +278,7 @@ class PostgreSQLCollector(BaseCollector):
             "period_length": instance.collect_interval,
             "fingerprint": fp,
             "example": fp,
+            "where_values": [],
             "is_truncated": 0,
             "example_type": "RANDOM",
             "example_metrics": "",

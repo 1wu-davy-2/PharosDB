@@ -112,6 +112,46 @@ def normalize_plan_summary(plan: dict) -> str:
     )
 
 
+# ── WHERE 值提取 ───────────────────────────────────────────────────
+
+_WHERE_EQ_RE = __import__("re").compile(
+    r"(\w+)\s*=\s*(?P<q>['\"]?)([^'\",\s()]+?)(?P=q)", __import__("re").IGNORECASE
+)
+
+
+def _extract_where_values(example_sql: str) -> list:
+    """从原始 SQL 的 WHERE 子句中提取 `column=literal` 对。
+
+    入: "SELECT * FROM orders WHERE order_id = 12345 AND status = 'active'"
+    出: ["order_id=12345", "status='active'"]
+
+    只提取 WHERE 之后、ORDER BY / GROUP BY / LIMIT 之前的等号表达式。
+    """
+    if not example_sql:
+        return []
+    text = example_sql
+    # 截取 WHERE → ORDER BY / GROUP BY / LIMIT / HAVING 区间
+    import re as _re
+    m = _re.search(r"\bWHERE\b\s+(.+?)(\bORDER\b|\bGROUP\b|\bLIMIT\b|\bHAVING\b|$)", text, _re.IGNORECASE | _re.DOTALL)
+    if not m:
+        return []
+    where_clause = m.group(1)
+
+    results = []
+    seen = set()
+    for match in _WHERE_EQ_RE.finditer(where_clause):
+        col = match.group(1).lower()
+        val_raw = match.group(3)
+        if col in ("?", "1", "0") or col.startswith("?"):
+            continue
+        key = f"{col}={val_raw}"
+        if key in seen:
+            continue
+        seen.add(key)
+        results.append(key)
+    return results[:10]  # 最多 10 个，防膨胀
+
+
 class MySQLCollector(BaseCollector):
     """MySQL Agentless 采集器 — 查询 performance_schema。
 
@@ -143,6 +183,93 @@ class MySQLCollector(BaseCollector):
             cur.close()
         except Exception:
             pass
+
+        # ── 角色检测 + 写入实例元数据 ──────────────────────────
+        self._detect_role()
+        self._detect_app_hosts()
+
+    def _detect_role(self):
+        """自动检测 MySQL/MariaDB 集群角色（primary / replica / standalone）。
+
+        读取 @@read_only + 复制状态，写入 DatabaseInstance.cluster_role。
+        不会因为检测失败而中断采集。
+        """
+        role = "standalone"
+        try:
+            cur = self.conn.cursor()
+            # 1. read_only 是最简单的信号
+            cur.execute("SELECT @@read_only")
+            row = cur.fetchone()
+            read_only = int(row[0]) if row else 0
+
+            if read_only:
+                role = "replica"
+            else:
+                # 2. 检查是否有活跃的复制 receiver/IO thread
+                try:
+                    # MySQL 8.0+
+                    cur.execute("SELECT COUNT(*) FROM performance_schema.replication_connection_status WHERE SERVICE_STATE = 'ON'")
+                    repl_active = cur.fetchone()[0]
+                except Exception:
+                    repl_active = 0
+
+                if not repl_active:
+                    try:
+                        # MariaDB 10.5+
+                        cur.execute("SELECT COUNT(*) FROM information_schema.wsrep_cluster_status")
+                        wsrep = cur.fetchone()
+                        if wsrep and wsrep[0] > 0:
+                            # Galera 集群写入节点 = primary
+                            role = "primary" if not read_only else "replica"
+                    except Exception:
+                        pass
+
+                if role == "standalone":
+                    # 3. 末检：如果有复制 channel 或副本状态，至少不是 standalone
+                    try:
+                        cur.execute("SHOW REPLICA STATUS")
+                        if cur.fetchone():
+                            role = "primary"
+                    except Exception:
+                        try:
+                            cur.execute("SHOW SLAVE STATUS")
+                            if cur.fetchone():
+                                role = "primary"
+                        except Exception:
+                            pass
+
+            cur.close()
+
+            # 只在角色变化时写 DB
+            if self.instance.cluster_role != role:
+                from collector.models import DatabaseInstance
+                DatabaseInstance.objects.filter(pk=self.instance.id).update(cluster_role=role)
+                self.instance.cluster_role = role
+        except Exception:
+            pass
+
+    def _detect_app_hosts(self):
+        """从 information_schema.processlist 获取当前连接的应用端 IP 列表。
+
+        排除系统用户后，取最活跃的应用主机地址作为 client_host 近似值。
+        结果缓存到 self._app_hosts 供 _build_ch_row 使用。
+        """
+        self._app_hosts = []
+        try:
+            cur = self.conn.cursor()
+            # 获取非系统用户的客户端 IP（排除 root、event_scheduler 等）
+            cur.execute(
+                "SELECT SUBSTRING_INDEX(HOST, ':', 1) AS client_ip, COUNT(*) AS cnt "
+                "FROM information_schema.processlist "
+                "WHERE HOST IS NOT NULL AND HOST != '' "
+                "  AND USER IS NOT NULL AND USER != 'event_scheduler' AND USER != 'system user' "
+                "  AND COMMAND != 'Daemon' "
+                "GROUP BY client_ip ORDER BY cnt DESC LIMIT 10"
+            )
+            self._app_hosts = [row[0] for row in cur.fetchall()]
+            cur.close()
+        except Exception:
+            self._app_hosts = []
 
     def collect(self) -> list[dict]:
         cur = self.conn.cursor(pymysql.cursors.DictCursor)
@@ -184,8 +311,11 @@ class MySQLCollector(BaseCollector):
             except Exception:
                 pass
 
+            # ── 提取 WHERE 等号值（跨节点关联的核心维度）──
+            where_values = _extract_where_values(example)
+
             # 构建 ClickHouse 行
-            ch_row = self._build_ch_row(row, delta, example, now)
+            ch_row = self._build_ch_row(row, delta, example, where_values, now)
             result.append(ch_row)
 
         # ── 动态读取全局配置 ──
@@ -282,7 +412,7 @@ class MySQLCollector(BaseCollector):
             "sum_tmp_table_sizes": delta_val("sum_tmp_table_sizes"),
         }
 
-    def _build_ch_row(self, raw_row, delta, example, now):
+    def _build_ch_row(self, raw_row, delta, example, where_values, now):
         """将 performance_schema 行映射为 ClickHouse metrics 表的行。"""
         # 皮秒转秒
         ps_to_s = 1e12
@@ -298,7 +428,7 @@ class MySQLCollector(BaseCollector):
             "database": "",
             "schema": raw_row.get("schema") or "",
             "username": "",
-            "client_host": "",
+            "client_host": self._app_hosts[0] if self._app_hosts else "",
 
             # 标准标签
             "replication_set": "",
@@ -337,6 +467,7 @@ class MySQLCollector(BaseCollector):
             # 查询指纹
             "fingerprint": raw_row.get("fingerprint") or "",
             "example": example,
+            "where_values": where_values,
             "is_truncated": 0,
             "example_type": "RANDOM",
             "example_metrics": "",

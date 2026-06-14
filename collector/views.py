@@ -28,8 +28,10 @@ class DatabaseInstanceViewSet(viewsets.ModelViewSet):
         "environment":        ["exact"],
         "connection_status":  ["exact"],
         "is_active":          ["exact"],
+        "cluster":            ["exact"],
+        "cluster_role":       ["exact"],
     }
-    search_fields = ["name", "host", "cluster"]
+    search_fields = ["name", "host", "cluster", "cluster_role"]
 
     @action(detail=True, methods=["post"], url_path="test")
     def test_connection(self, request, pk=None):

@@ -337,6 +337,13 @@ export default function LockPage() {
             >
               {t("locks.tab_history")}
             </button>
+            <button
+              className={`lock-tab-btn ${tab === "global" ? "lock-tab-btn--active" : ""}`}
+              onClick={() => setTab("global")}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>public</span>
+              {t("locks.tab_global")}
+            </button>
           </div>
 
           {tab === "realtime" && (
@@ -429,6 +436,10 @@ export default function LockPage() {
                 }
               </div>
             )}
+
+            {tab === "global" && (
+              <CrossNodeLockView instances={instances} selectedId={selectedId} />
+            )}
           </div>
 
           {selectedItem && (
@@ -439,6 +450,120 @@ export default function LockPage() {
     </AppLayout>
   );
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Cross-Node Lock View (Step 3 — global lock aggregation)
+   ═══════════════════════════════════════════════════════════ */
+
+function CrossNodeLockView({ instances, selectedId }) {
+  const { t } = useTranslation();
+  const [locks, setLocks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Get the cluster of the selected instance
+  const selectedInst = instances.find((i) => String(i.id) === selectedId);
+  const cluster = selectedInst?.cluster || "";
+
+  useEffect(() => {
+    if (!cluster) {
+      setLocks([]);
+      setError("");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    const end = new Date().toISOString();
+    const start = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
+    api
+      .get(`/qan/cross-node/locks/?cluster=${encodeURIComponent(cluster)}&start=${start}&end=${end}`)
+      .then(({ data }) => {
+        setLocks(data.locks || []);
+        if (data.hint) setError(data.hint);
+      })
+      .catch((e) => setError(e.response?.data?.error || t("locks.load_failed")))
+      .finally(() => setLoading(false));
+  }, [cluster, t]);
+
+  if (!cluster) {
+    return (
+      <div className="lock-card">
+        <div className="lock-card-header">
+          <span className="lock-card-title">{t("locks.global_title")}</span>
+        </div>
+        <div className="empty-state" style={{ padding: 32 }}>
+          <span className="material-symbols-outlined empty-state-icon">public_off</span>
+          <div className="empty-state-title">{t("locks.global_no_cluster")}</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="lock-card">
+      <div className="lock-card-header">
+        <span className="lock-card-title">
+          <span className="material-symbols-outlined" style={{ fontSize: 18, marginRight: 6 }}>public</span>
+          {t("locks.global_title")} — {cluster}
+        </span>
+        <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
+          {t("locks.global_desc")}
+        </span>
+      </div>
+
+      {error && <div className="lock-error" style={{ margin: "8px 16px" }}>{error}</div>}
+
+      {loading ? (
+        <div className="lock-loading">{t("common.loading")}</div>
+      ) : locks.length === 0 ? (
+        <div className="empty-state" style={{ padding: 32 }}>
+          <span className="material-symbols-outlined empty-state-icon">check_circle</span>
+          <div className="empty-state-title">{t("locks.global_no_data")}</div>
+        </div>
+      ) : (
+        <div style={{ overflow: "auto" }}>
+          <table className="lock-history-table">
+            <thead>
+              <tr>
+                <th>{t("locks.col_time")}</th>
+                <th>Blocker</th>
+                <th>Waiter</th>
+                <th>{t("locks.col_object")}</th>
+                <th>{t("locks.col_wait_s")}</th>
+                <th>{t("locks.col_deadlock")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {locks.map((l, i) => (
+                <tr key={i}>
+                  <td style={{ fontSize: 11 }}>{l.waiter_time?.replace("T", " ").slice(0, 19)}</td>
+                  <td>
+                    <span className="inst-role-tag inst-role-tag--{l.role_a}" style={{ marginRight: 4 }}>{l.blocker_node}</span>
+                  </td>
+                  <td>
+                    <span className="inst-role-tag inst-role-tag--{l.role_b}" style={{ marginRight: 4 }}>{l.waiter_node}</span>
+                  </td>
+                  <td style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}>
+                    {l.schema}.{l.table} [{l.row_id}]
+                  </td>
+                  <td>{l.wait_age_secs}s</td>
+                  <td>
+                    {l.is_deadlock ? (
+                      <span style={{ color: "#eab308", fontWeight: 700 }}>{t("dashboard.deadlock_detected")}</span>
+                    ) : (
+                      <span style={{ color: "var(--color-text-dim)" }}>—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function Legend({ t }) {
   const items = [

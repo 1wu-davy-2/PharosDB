@@ -27,6 +27,12 @@ class DatabaseInstance(models.Model):
     password = models.TextField("密码 (加密存储)")
     environment = models.CharField("环境", max_length=32, choices=ENV_CHOICES, default="prod")
     cluster = models.CharField("集群", max_length=128, blank=True, default="")
+    cluster_role = models.CharField(
+        "集群角色", max_length=20,
+        choices=[("primary", "Primary"), ("replica", "Replica"),
+                 ("shard", "Shard"), ("standalone", "Standalone")],
+        default="standalone",
+    )
     is_active = models.BooleanField("启用采集", default=True)
     collect_interval = models.PositiveIntegerField("采集间隔 (秒)", default=60)
     db_version = models.CharField("数据库版本", max_length=64, blank=True, default="")

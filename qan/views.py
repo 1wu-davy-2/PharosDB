@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from . import plan_services, services
+from . import cross_services, plan_services, services
 
 
 class TopQueriesView(APIView):
@@ -261,3 +261,74 @@ class ManualExplainView(APIView):
                 cur.close()
             if conn is not None:
                 conn.close()
+
+
+# ═══ 跨节点诊断 API ═════════════════════════════════════════════
+
+
+class CrossNodeCorrelationView(APIView):
+    """GET /api/qan/cross-node/correlation/
+
+    参数:
+      ?cluster=galera-prod-01     (必填：集群名称)
+      &start=2026-06-14T00:00:00  (ISO 时间)
+      &end=2026-06-14T01:00:00
+      &min_confidence=60          (默认 60)
+    """
+
+    def get(self, request):
+        cluster = request.query_params.get("cluster", "").strip()
+        if not cluster:
+            from collector.models import DatabaseInstance
+            clusters = sorted(set(
+                DatabaseInstance.objects.exclude(cluster="")
+                .values_list("cluster", flat=True)
+            ))
+            return Response({
+                "clusters": clusters,
+                "message": "请指定 ?cluster= 参数",
+            })
+
+        start = request.query_params.get("start", "")
+        end = request.query_params.get("end", "")
+        min_conf = int(request.query_params.get("min_confidence", 60))
+
+        if not start or not end:
+            return Response({"error": "请指定 ?start= & ?end= ISO 时间"}, status=400)
+
+        result = cross_services.get_cross_node_correlations(
+            cluster, start, end, min_confidence=min_conf
+        )
+        return Response(result)
+
+
+class CrossNodeLockView(APIView):
+    """GET /api/qan/cross-node/locks/
+
+    参数:
+      ?cluster=galera-prod-01
+      &start=2026-06-14T00:00:00
+      &end=2026-06-14T01:00:00
+    """
+
+    def get(self, request):
+        cluster = request.query_params.get("cluster", "").strip()
+        if not cluster:
+            from collector.models import DatabaseInstance
+            clusters = sorted(set(
+                DatabaseInstance.objects.exclude(cluster="")
+                .values_list("cluster", flat=True)
+            ))
+            return Response({
+                "clusters": clusters,
+                "message": "请指定 ?cluster= 参数",
+            })
+
+        start = request.query_params.get("start", "")
+        end = request.query_params.get("end", "")
+
+        if not start or not end:
+            return Response({"error": "请指定 ?start= & ?end= ISO 时间"}, status=400)
+
+        result = cross_services.get_cross_node_locks(cluster, start, end)
+        return Response(result)

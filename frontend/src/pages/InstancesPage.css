@@ -159,6 +159,16 @@
   text-transform: uppercase; letter-spacing: 0.04em;
 }
 
+.inst-role-tag {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-left: 4px; width: 18px; height: 18px;
+  border-radius: 50%; font-size: 10px; font-weight: 800;
+  line-height: 1;
+}
+.inst-role-tag--primary { background: #10b981; color: #fff; }
+.inst-role-tag--replica { background: #3b82f6; color: #fff; }
+.inst-role-tag--shard   { background: #a855f7; color: #fff; }
+
 /* Type badge */
 .inst-type-badge {
   display: inline-flex; align-items: center; gap: 5px;

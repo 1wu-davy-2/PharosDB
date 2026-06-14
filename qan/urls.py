@@ -16,4 +16,7 @@ urlpatterns = [
     path("plans/compare/", views.PlanCompareView.as_view(), name="plan_compare"),
     path("plans/<str:plan_id>/", views.PlanDetailView.as_view(), name="plan_detail"),
     path("explain/", views.ManualExplainView.as_view(), name="manual_explain"),
+    # 跨节点诊断
+    path("cross-node/correlation/", views.CrossNodeCorrelationView.as_view(), name="cross_correlation"),
+    path("cross-node/locks/", views.CrossNodeLockView.as_view(), name="cross_locks"),
 ]

@@ -23,7 +23,7 @@ class DatabaseInstanceSerializer(serializers.ModelSerializer):
         fields = [
             "id", "name", "db_type", "host", "port",
             "username", "password", "password_masked",
-            "environment", "cluster", "is_active",
+            "environment", "cluster", "cluster_role", "is_active",
             "collect_interval", "db_version", "connection_status",
             "last_error", "last_collected_at", "created_at", "updated_at",
         ]

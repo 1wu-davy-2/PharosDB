@@ -116,6 +116,11 @@
     "field_active": "Enable Auto-Collect",
     "pwd_placeholder": "Leave blank to keep",
     "cluster_optional": "Optional",
+    "field_cluster_role": "Cluster Role",
+    "role_standalone": "Standalone",
+    "role_primary": "Primary",
+    "role_replica": "Replica",
+    "role_shard": "Shard",
     "no_history": "No collection records"
   },
   "history": {
@@ -256,7 +261,18 @@
     "trend_total_time": "Total Time",
     "trend_avg_time": "Avg Time",
     "trend_max_time": "Max Time",
-    "trend_rows": "Rows Scanned"
+    "trend_rows": "Rows Scanned",
+    "tab_cross_node": "Cross-Node",
+    "cross_node_title": "Cross-Node SQL Correlation",
+    "cross_node_hint": "Select a cluster to view cross-node correlations",
+    "cross_node_no_cluster": "No clusters with 2+ nodes. Set the cluster field in Instance Management first.",
+    "cross_node_col_confidence": "Confidence",
+    "cross_node_col_node_a": "Node A",
+    "cross_node_col_node_b": "Node B",
+    "cross_node_col_time_a": "Time A",
+    "cross_node_col_time_b": "Time B",
+    "cross_node_col_diff": "Delta",
+    "cross_node_no_data": "No significant cross-node correlations found"
   },
   "settings": {
     "title": "Global Settings",
@@ -303,6 +319,12 @@
     "load_failed": "Load failed",
     "detail_waiting_query": "Waiting SQL",
     "detail_blocking_query": "Blocking SQL",
-    "detail_lock_info": "Lock Info"
+    "detail_lock_info": "Lock Info",
+    "tab_global": "Global View",
+    "global_title": "Cross-Node Lock Topology",
+    "global_desc": "Match same row locks across nodes",
+    "global_no_cluster": "No clusters with 2+ nodes. Set cluster in Instance Management first.",
+    "global_no_data": "No cross-node lock contention found",
+    "cross_node_edge": "Cross-Node Lock Chain"
   }
 }
