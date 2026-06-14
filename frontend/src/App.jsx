@@ -10,6 +10,7 @@ import LockPage from "./pages/LockPage";
 import AlertsPage from "./pages/AlertsPage";
 import SettingsPage from "./pages/SettingsPage";
 import AdvisorPage from "./pages/AdvisorPage";
+import AdminPage from "./pages/AdminPage";
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/alerts" element={<ProtectedRoute><AlertsPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/advisor" element={<ProtectedRoute><AdvisorPage /></ProtectedRoute>} />
+          <Route path="/system" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

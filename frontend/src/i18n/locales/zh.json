@@ -17,7 +17,8 @@
     "locks": "锁分析",
     "alerts": "告警中心",
     "advisor": "安全巡检",
-    "settings": "全局设置"
+    "settings": "全局设置",
+    "admin": "系统管理"
   },
   "advisor": {
     "tab_findings": "发现",

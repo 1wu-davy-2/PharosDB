@@ -17,7 +17,8 @@
     "locks": "Lock Analysis",
     "alerts": "Alerts",
     "advisor": "Advisor",
-    "settings": "Settings"
+    "settings": "Settings",
+    "admin": "System"
   },
   "advisor": {
     "tab_findings": "Findings",

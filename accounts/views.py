@@ -1,17 +1,37 @@
 """
-Accounts app views — login / logout / me / change-password.
+Accounts app views — login / logout / me / change-password / admin user management.
 """
+from django.contrib.auth.models import User
 from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .models import LoginAttempt
 from .serializers import (
+    AdminCreateUserSerializer,
+    AdminResetPasswordSerializer,
+    AdminUserListSerializer,
     ChangePasswordSerializer,
     LoginSerializer,
     UserSerializer,
 )
 from .utils import get_client_ip, get_client_ip_info
 
+
+# ═══════════════════════════════════════════════════════════════════
+# Permissions
+# ═══════════════════════════════════════════════════════════════════
+
+class IsSuperUser(permissions.BasePermission):
+    """仅超级管理员可访问。"""
+
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and request.user.is_superuser
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Auth endpoints
+# ═══════════════════════════════════════════════════════════════════
 
 class LoginView(views.APIView):
     """POST /api/auth/login/ — returns JWT access + refresh tokens (IP-bound)."""
@@ -20,7 +40,7 @@ class LoginView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
+        serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
 
@@ -139,3 +159,110 @@ class ChangePasswordView(views.APIView):
         request.user.set_password(serializer.validated_data["new_password"])
         request.user.save()
         return Response({"detail": "密码修改成功。"})
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Admin — user management (superuser only)
+# ═══════════════════════════════════════════════════════════════════
+
+class UserListView(views.APIView):
+    """GET /api/auth/users/ — 列出所有用户。
+    POST /api/auth/users/ — 创建新用户。
+    """
+
+    permission_classes = [permissions.IsAuthenticated, IsSuperUser]
+
+    def get(self, request):
+        users = User.objects.all().order_by("-date_joined")
+        serializer = AdminUserListSerializer(users, many=True)
+        return Response({"users": serializer.data, "total": len(serializer.data)})
+
+    def post(self, request):
+        serializer = AdminCreateUserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        user = User.objects.create_user(
+            username=data["username"],
+            email=data.get("email", ""),
+            password=data["password"],
+        )
+        user.is_superuser = data.get("is_superuser", False)
+        user.is_staff = data.get("is_superuser", False)
+        user.save()
+
+        return Response(
+            {
+                "status": "ok",
+                "user": AdminUserListSerializer(user).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class UserDetailView(views.APIView):
+    """DELETE /api/auth/users/<id>/ — 删除用户（或禁用）。
+    支持查询参数 ?action=deactivate 改为禁用而非删除。
+    """
+
+    permission_classes = [permissions.IsAuthenticated, IsSuperUser]
+
+    def delete(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"error": "用户不存在"}, status=404)
+
+        if user.id == request.user.id:
+            return Response({"error": "不能删除自己"}, status=400)
+
+        action = request.query_params.get("action", "delete")
+        if action == "deactivate":
+            user.is_active = False
+            user.save(update_fields=["is_active"])
+            return Response({"status": "ok", "is_active": False})
+
+        user.delete()
+        return Response({"status": "ok"})
+
+
+class UserResetPasswordView(views.APIView):
+    """PUT /api/auth/users/<id>/reset-password/ — 管理员强制重置用户密码。"""
+
+    permission_classes = [permissions.IsAuthenticated, IsSuperUser]
+
+    def put(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"error": "用户不存在"}, status=404)
+
+        serializer = AdminResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user.set_password(serializer.validated_data["new_password"])
+        user.save()
+
+        return Response({"status": "ok", "detail": f"用户 {user.username} 的密码已重置。"})
+
+
+class UserUnlockView(views.APIView):
+    """POST /api/auth/users/<id>/unlock/ — 清除用户的所有登录失败记录。"""
+
+    permission_classes = [permissions.IsAuthenticated, IsSuperUser]
+
+    def post(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"error": "用户不存在"}, status=404)
+
+        deleted, _ = LoginAttempt.objects.filter(
+            username=user.username, success=False,
+        ).delete()
+
+        return Response({
+            "status": "ok",
+            "detail": f"已清除 {user.username} 的 {deleted} 条登录失败记录。",
+            "cleared": deleted,
+        })

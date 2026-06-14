@@ -13,6 +13,7 @@ const Icon = ({ name, size = 20 }) => (
 /* ═══ 侧边栏 ═══ */
 function Sidebar({ collapsed, onToggle }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const navItems = [
     { icon: "dashboard", label: t("nav.dashboard"), to: "/" },
     { icon: "query_stats", label: t("nav.qan"), to: "/qan" },
@@ -21,6 +22,10 @@ function Sidebar({ collapsed, onToggle }) {
     { icon: "notifications", label: t("nav.alerts"), to: "/alerts" },
     { icon: "verified_user", label: t("nav.advisor"), to: "/advisor" },
     { icon: "tune", label: t("nav.settings"), to: "/settings" },
+    // System admin — superuser only
+    ...(user?.is_superuser
+      ? [{ icon: "manage_accounts", label: t("nav.admin"), to: "/system" }]
+      : []),
   ];
 
   return (
