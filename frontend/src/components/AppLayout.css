@@ -350,6 +350,74 @@
    Shared Utility Components
    ═══════════════════════════════════════════════ */
 
+/* ── 通用卡片 ── */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.card-link {
+  font-size: 13px;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.card-link:hover {
+  text-decoration: underline;
+}
+
+/* ── 通用表格 ── */
+.table-wrap {
+  overflow-x: auto;
+}
+
+.sql-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+}
+
+.sql-table thead {
+  font-family: system-ui, -apple-system, "Noto Sans SC", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.sql-table th {
+  padding: 12px 14px;
+  text-align: left;
+  font-weight: 400;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sql-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-text);
+}
+
+.sql-table tbody tr:hover {
+  background: var(--color-surface-hover);
+}
+
 /* ── 通用页面工具栏 ── */
 .page-toolbar {
   display: flex;

@@ -1,5 +1,12 @@
 /* ── Alert Center ── */
 
+/* 操作按钮组 */
+.action-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 /* 汇总行 */
 .alert-summary-row {
   display: grid;
